@@ -31,7 +31,26 @@ function makeFighter(scene,isEnemy=false,index=0){
  }
  const armL=capsule(root,.12,.48,isEnemy?suit:dark,[-.46,1.42,0]),armR=capsule(root,.12,.48,isEnemy?suit:dark,[.46,1.42,0]);
  mesh(root,new THREE.SphereGeometry(.12,10,8),skin,[-.48,1.12,0]);mesh(root,new THREE.SphereGeometry(.12,10,8),skin,[.48,1.12,0]);
- const legL=capsule(root,.15,.48,mat('#20252b'),[-.2,.48,0]),legR=capsule(root,.15,.48,mat('#20252b'),[.2,.48,0]);
+ const armor=mat(isEnemy?'#263747':'#202c3b',.28,.78),edge=mat('#718da0',.24,.82),glowMat=new THREE.MeshStandardMaterial({color:'#6ff4ff',metalness:.35,roughness:.2,emissive:'#10cfff',emissiveIntensity:1.35});
+  mesh(root,new THREE.BoxGeometry(.58,.34,.2),armor,[0,1.55,-.34]);
+  mesh(root,new THREE.BoxGeometry(.48,.09,.22),edge,[0,1.76,-.34]);
+  const reactor=mesh(root,new THREE.OctahedronGeometry(.105,1),glowMat,[0,1.53,-.47]);reactor.rotation.z=Math.PI/4;
+  mesh(root,new THREE.BoxGeometry(.1,.48,.08),edge,[-.34,1.42,-.23],[0,0,-.08]);
+  mesh(root,new THREE.BoxGeometry(.1,.48,.08),edge,[.34,1.42,-.23],[0,0,.08]);
+  const shoulderL=mesh(root,new THREE.SphereGeometry(.2,12,10),armor,[-.47,1.67,-.02]);shoulderL.scale.set(1.15,.78,1.05);
+  const shoulderR=mesh(root,new THREE.SphereGeometry(.2,12,10),armor,[.47,1.67,-.02]);shoulderR.scale.set(1.15,.78,1.05);
+  mesh(root,new THREE.BoxGeometry(.42,.09,.12),glowMat,[0,1.17,-.29]);
+  const legL=capsule(root,.15,.48,mat('#111b28',.3,.72),[-.2,.48,0]),legR=capsule(root,.15,.48,mat('#111b28',.3,.72),[.2,.48,0]);
+  for(const x of [-.2,.2]){
+    mesh(root,new THREE.BoxGeometry(.31,.2,.5),armor,[x,.14,-.08]);
+    mesh(root,new THREE.BoxGeometry(.28,.055,.47),edge,[x,.22,-.08]);
+    mesh(root,new THREE.BoxGeometry(.31,.06,.08),glowMat,[x,.28,-.29]);
+    mesh(root,new THREE.BoxGeometry(.32,.075,.18),armor,[x,.55,-.11]);
+  }
+  for(const x of [-.48,.48])mesh(root,new THREE.BoxGeometry(.23,.16,.2),armor,[x,1.05,-.03]);
+  mesh(root,new THREE.BoxGeometry(.34,.105,.045),mat('#101c29',.18,.8),[0,2.04,-.225]);
+  mesh(root,new THREE.BoxGeometry(.105,.025,.025),glowMat,[-.075,2.045,-.255]);
+  mesh(root,new THREE.BoxGeometry(.105,.025,.025),glowMat,[.075,2.045,-.255]);
  mesh(root,new THREE.BoxGeometry(.29,.14,.44),dark,[-.2,.12,-.03]);mesh(root,new THREE.BoxGeometry(.29,.14,.44),dark,[.2,.12,-.03]);
  const hpBack=new THREE.Sprite(new THREE.SpriteMaterial({color:'#1b2228',depthTest:false}));hpBack.position.set(0,2.72,0);hpBack.scale.set(1.22,.14,1);root.add(hpBack);const hpFill=new THREE.Sprite(new THREE.SpriteMaterial({color:isEnemy?'#f05b62':'#53e68b',depthTest:false}));hpFill.position.set(0,2.72,.012);hpFill.scale.set(1.16,.085,1);root.add(hpFill);
  if(isEnemy){gun=new THREE.Group();root.add(gun);gun.position.set(.48,1.08,-.18);mesh(gun,new THREE.BoxGeometry(.12,.14,.48),mat('#24282c',.35,.7),[0,0,-.18]);mesh(gun,new THREE.BoxGeometry(.07,.18,.12),mat('#16191d'),[0,-.12,-.08]);}
@@ -104,7 +123,7 @@ releaseWave(){if(this.swordCharge<3){this.onToast?.('剑气蓄力 '+this.swordCh
  equipSword(id){const s=SWORDS.find(x=>x.id===id);if(!s)return;this.swordId=id;this.swordColor=s.color;this.player.sword.traverse(o=>{if(o.isMesh&&o.geometry.type==='BoxGeometry'&&o.geometry.parameters.height===.78){o.material.emissive.set(s.color);}});localStorage.setItem('ns_sword',id);this.updateUI();}
  updateUI(){this.onUpdate?.({hp:this.hp,maxHp:this.maxHp,poison:this.poisonTime,cores:this.coreSlots,attack:this.baseAttack||15,attackSpeed:(1+(this.attackSpeedBonus||0))*(this.poisonTime>0?.5:1),crit:10+(this.critBonus||0)*100,critDamage:200+(this.critDamageBonus||0)*100,xp:this.xp,enemies:this.enemies.filter(e=>!e.dead).length,buff:this.buff,buffTime:this.buffTime,charge:this.swordCharge,gold:this.gold,kills:this.kills,swordId:this.swordId,weapon:this.activeWeapon,owned:this.weaponOwned,district:this.districtProgress});}
  dodge(){if(this.paused||this.dodgeTime>0)return;this.dodgeTime=.42;this.invuln=.5;this.dodgeDir.set(0,0,-1).applyQuaternion(this.player.root.quaternion).normalize();}
- loop=()=>{requestAnimationFrame(this.loop);const dt=Math.min(this.clock.getDelta(),.04);if(this.paused)return;this.update(dt);this.renderer.render(this.scene,this.camera);};
+ loop=()=>{requestAnimationFrame(this.loop);const dt=Math.min(this.clock.getDelta(),.04);if(this.paused)return;this.update(dt);if(this.world.composer)this.world.composer.render();else this.renderer.render(this.scene,this.camera);};
  update(dt){const p=this.player.root;this.attackTime=Math.max(0,this.attackTime-dt);this.iaidoTime=Math.max(0,this.iaidoTime-dt);this.dodgeTime=Math.max(0,this.dodgeTime-dt);this.invuln=Math.max(0,this.invuln-dt);this.parryWindow=Math.max(0,this.parryWindow-dt);this.comboWindow=Math.max(0,this.comboWindow-dt);this.buffTime=Math.max(0,this.buffTime-dt);if(!this.buffTime)this.buff=null;
   this.timeStop=Math.max(0,this.timeStop-dt);const worldDt=dt*(this.buff==='斯安威斯坦'?.2:1),forward=(this.keys.KeyW||this.keys.ArrowUp?1:0)-(this.keys.KeyS||this.keys.ArrowDown?1:0)+this.mobile.y,side=(this.keys.KeyD||this.keys.ArrowRight?1:0)-(this.keys.KeyA||this.keys.ArrowLeft?1:0)+this.mobile.x,move=new THREE.Vector3(side,0,-forward);if(move.lengthSq()>1)move.normalize();const speed=(this.buff==='狂暴'?7.4:5.2)*(this.keys.ShiftLeft||this.keys.ShiftRight?1.45:1)*(this.poisonTime>0?.5:1)*(1+(this.moveBonus||0));
   this.poisonTime=Math.max(0,this.poisonTime-dt);this.poisonImmune=Math.max(0,(this.poisonImmune||0)-dt);if(this.player.hpFill)this.player.hpFill.scale.x=1.16*Math.max(0,this.hp/this.maxHp);this.updateDistricts();if(this.chest&&!this.chest.opened&&p.position.distanceTo(this.chest.group.position)<4.5&&!this.chest.prompted){this.chest.prompted=true;this.onToast?.('宝箱就在附近：按 E 开启');}if(this.dodgeTime>0)p.position.addScaledVector(this.dodgeDir,10*dt);if(move.lengthSq()>.01){const angle=Math.atan2(move.x,-move.z)+this.cameraYaw;p.rotation.y=THREE.MathUtils.lerp(p.rotation.y,angle,Math.min(1,dt*12));p.position.addScaledVector(new THREE.Vector3(Math.sin(angle),0,-Math.cos(angle)),speed*dt);}p.position.x=THREE.MathUtils.clamp(p.position.x,-48,48);p.position.z=Math.min(p.position.z,48);p.rotation.y=this.cameraYaw;
