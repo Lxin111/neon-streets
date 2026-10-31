@@ -11,7 +11,7 @@ function setLoadingProgress(value,task){
   loadingPercent.textContent=percent.toFixed(2)+'%';
   loadingTask.textContent=task;
 }
-const nextFrame=()=>new Promise(resolve=>requestAnimationFrame(resolve));
+const nextFrame=()=>new Promise(resolve=>{let finished=false;const done=()=>{if(finished)return;finished=true;resolve();};if(typeof requestAnimationFrame==='function')requestAnimationFrame(done);setTimeout(done,40);});
 setLoadingProgress(3,'正在初始化 WebGL 图形设备…');
 await nextFrame();
 const app=document.querySelector('#app');
