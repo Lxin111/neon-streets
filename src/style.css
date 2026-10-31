@@ -36,3 +36,15 @@
 .enemy-direction-arrow.boss::before{border-bottom-color:#ff6479;border-left-width:5.5px;border-right-width:5.5px;border-bottom-width:15px}
 .enemy-direction-arrow.boss::after{background:#fff0f1}
 @media(max-width:700px){.enemy-direction-arrow{transform-origin:50% 50%;width:12px;height:15px}.enemy-direction-arrow::before{border-left-width:4px;border-right-width:4px;border-bottom-width:11px}}
+
+/* Adjustable world environment panel */
+.environment-menu{width:min(92vw,440px)}
+.environment-control{margin:22px 0 16px;padding:14px;background:#ffffff08;border:1px solid #ffffff20;border-radius:9px}
+.environment-control label{display:flex;justify-content:space-between;align-items:center;color:#dce7eb;font-size:13px;font-weight:700;margin-bottom:12px}
+.environment-control label b{color:#e9c46a;font:700 20px 'Barlow Condensed'}
+.environment-control input[type=range]{width:100%;accent-color:#e9c46a;touch-action:pan-y}
+.environment-control select{width:100%;padding:12px;background:#101d27;border:1px solid #ffffff35;border-radius:7px;color:#f0f5f7;font:inherit}
+.time-scale{display:flex;justify-content:space-between;color:#81939e;font-size:9px;margin-top:4px}
+.environment-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.environment-presets button{padding:9px 3px;border:1px solid #e9c46a44;background:#e9c46a12;color:#f3dda1;border-radius:6px;font-size:10px}
+@media(max-width:700px){.environment-menu{padding:20px}.environment-presets button{font-size:9px}.topbar #environmentBtn{font-size:8px;padding:7px 6px}}
