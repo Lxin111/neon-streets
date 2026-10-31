@@ -50,7 +50,9 @@ jobs:
                   base = os.path.basename(name)
                   if not base or not base.lower().endswith((".fbx", ".jpg", ".png")):
                       continue
-                  with archive.open(item) as src, open(os.path.join(target, base), "wb") as dst:
+                  destination = os.path.join(target, base) if base.lower().endswith(".fbx") else os.path.join(target, "tex", base)
+                  os.makedirs(os.path.dirname(destination), exist_ok=True)
+                  with archive.open(item) as src, open(destination, "wb") as dst:
                       dst.write(src.read())
           PY
           blender --background --python scripts/convert_renderpeople.py -- /tmp/renderpeople-nathan/rp_nathan_animated_003_walking.fbx public/models/nathan-photogrammetry.glb
