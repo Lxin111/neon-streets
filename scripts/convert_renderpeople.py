@@ -6,12 +6,21 @@ args = sys.argv[sys.argv.index("--") + 1:]
 fbx_path, output_path = args[0], args[1]
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
-bpy.ops.import_scene.fbx(
-    filepath=fbx_path,
-    use_anim=True,
-    use_image_search=True,
-    use_custom_normals=True,
-)
+if hasattr(bpy.ops.wm, "fbx_import"):
+    bpy.ops.wm.fbx_import(
+        filepath=fbx_path,
+        use_anim=True,
+        use_custom_normals=True,
+        import_colors="SRGB",
+        global_scale=1.0,
+    )
+else:
+    bpy.ops.import_scene.fbx(
+        filepath=fbx_path,
+        use_anim=True,
+        use_image_search=True,
+        use_custom_normals=True,
+    )
 
 # Rebuild the imported scan material as a compact PBR material.
 for material in bpy.data.materials:
