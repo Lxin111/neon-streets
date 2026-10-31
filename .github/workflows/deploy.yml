@@ -26,6 +26,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Inspect official photogrammetry animated character pack
+        run: |
+          curl --fail --location --retry 3 --retry-delay 2 "https://renderpeople.com/sample/free/renderpeople_free_animated_people_FBX.zip" --output /tmp/renderpeople-animated.zip
+          echo "Renderpeople animated scan archive contents:"
+          unzip -l /tmp/renderpeople-animated.zip | head -80
       - name: Download CC0 rigged human character
         run: |
           mkdir -p public/models
