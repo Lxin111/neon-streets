@@ -7,7 +7,9 @@ A browser-based third-person street-fighting prototype built with Three.js and V
 - Third-person camera and keyboard movement
 - Five basic enemy AI fighters
 - Light combo attacks, dodge, block and health/XP HUD
-- Touch joystick, swipe-to-rotate camera and action buttons for mobile browsers\n- Directional dodge dash with brief invulnerability and a defeat/retry screen\n- Reduced rendering resolution and disabled dynamic shadows on touch devices
+- Touch joystick, swipe-to-rotate camera and action buttons for mobile browsers
+- Directional dodge dash with brief invulnerability and a defeat/retry screen
+- Reduced rendering resolution and disabled dynamic shadows on touch devices
 - GitHub Actions workflow for GitHub Pages
 
 ## Controls
