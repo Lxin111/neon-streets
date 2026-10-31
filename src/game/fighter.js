@@ -59,6 +59,58 @@ function makeFighter(scene,isEnemy=false,index=0){
  if(isEnemy){gun=new THREE.Group();root.add(gun);gun.position.set(.48,1.08,-.18);mesh(gun,new THREE.BoxGeometry(.12,.14,.48),mat('#24282c',.35,.7),[0,0,-.18]);mesh(gun,new THREE.BoxGeometry(.07,.18,.12),mat('#16191d'),[0,-.12,-.08]);}
  return {root,armL,armR,legL,legR,sword,gun,cloak,hpFill,anim:0,isEnemy};
 }
+
+function proceduralTexture(base,kind='fabric',seed=1){
+ const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const ctx=canvas.getContext('2d');ctx.fillStyle=base;ctx.fillRect(0,0,256,256);
+ let n=(seed>>>0)||1;const rand=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};
+ const image=ctx.getImageData(0,0,256,256),d=image.data;for(let i=0;i<d.length;i+=4){const v=(rand()-.5)*(kind==='skin'?22:kind==='stone'?38:18);d[i]=THREE.MathUtils.clamp(d[i]+v,0,255);d[i+1]=THREE.MathUtils.clamp(d[i+1]+v,0,255);d[i+2]=THREE.MathUtils.clamp(d[i+2]+v,0,255);}ctx.putImageData(image,0,0);
+ if(kind==='fabric'){ctx.globalAlpha=.13;ctx.strokeStyle='#fff';for(let y=0;y<256;y+=4){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(256,y);ctx.stroke();}ctx.globalAlpha=1;}
+ if(kind==='skin'){ctx.globalAlpha=.13;for(let i=0;i<2200;i++){ctx.fillStyle=rand()>.5?'#d5efbd':'#183d20';ctx.beginPath();ctx.arc(rand()*256,rand()*256,rand()*1.7,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;}
+ if(kind==='stone'){ctx.globalAlpha=.35;ctx.strokeStyle='#15191c';for(let i=0;i<48;i++){const x=rand()*256,y=rand()*256;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+(rand()-.5)*38,y+(rand()-.5)*48);ctx.stroke();}ctx.globalAlpha=1;}
+ const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.anisotropy=4;return tex;
+}
+function texturedMat(color,kind,seed,roughness=.72,metalness=0){return new THREE.MeshStandardMaterial({color,map:proceduralTexture(color,kind,seed),roughness,metalness});}
+function makeEliteSuit(scene,seed=0){
+ const root=new THREE.Group();scene.add(root);const skin=texturedMat('#bd8e70','skin',seed+1,.82),suit=texturedMat(seed%2?'#252b35':'#171d27','fabric',seed+2,.88),pants=texturedMat('#171d27','fabric',seed+3,.9),shirt=texturedMat('#e4e5df','fabric',seed+4,.78),tie=mat(seed%2?'#6d1e2c':'#263f66',.72),shoe=mat('#111318',.3,.12),gold=mat('#b89a5b',.3,.72);
+ const part=(geo,material,pos,scale,rot)=>{const m=new THREE.Mesh(geo,material);m.position.set(...pos);if(scale)m.scale.set(...scale);if(rot)m.rotation.set(...rot);m.castShadow=true;m.receiveShadow=true;root.add(m);return m;};
+ part(new THREE.CapsuleGeometry(.38,.58,8,16),suit,[0,1.38,0],[1,.95,.72]);part(new THREE.BoxGeometry(.54,.62,.12),shirt,[0,1.43,-.28]);part(new THREE.BoxGeometry(.12,.58,.045),tie,[0,1.4,-.36]);
+ for(const side of [-1,1])part(new THREE.BoxGeometry(.18,.62,.055),suit,[side*.17,1.45,-.35],[1,1,1],[0,0,side*.22]);
+ part(new THREE.SphereGeometry(.245,32,24),skin,[0,2.08,-.01],[.9,1.05,.9]);part(new THREE.SphereGeometry(.25,24,16,0,Math.PI*2,0,Math.PI*.45),mat('#25201d',.9),[0,2.18,.015],[1,1,.9]);part(new THREE.BoxGeometry(.32,.065,.075),skin,[0,1.99,-.22]);
+ const armL=new THREE.Group(),armR=new THREE.Group();armL.position.set(-.43,1.62,0);armR.position.set(.43,1.62,0);root.add(armL,armR);
+ for(const [g,side] of [[armL,-1],[armR,1]]){const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.12,.38,5,10),suit);upper.position.y=-.23;g.add(upper);const cuff=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.09,12),shirt);cuff.position.y=-.46;g.add(cuff);const hand=new THREE.Mesh(new THREE.SphereGeometry(.105,16,12),skin);hand.position.y=-.57;g.add(hand);part(new THREE.SphereGeometry(.035,12,10),mat('#1c1715'),[side*.09,2.08,-.225]);}
+ const legL=new THREE.Group(),legR=new THREE.Group();legL.position.set(-.2,.58,0);legR.position.set(.2,.58,0);root.add(legL,legR);
+ for(const g of [legL,legR]){const thigh=new THREE.Mesh(new THREE.CapsuleGeometry(.15,.55,6,12),pants);thigh.position.y=-.25;g.add(thigh);const boot=new THREE.Mesh(new THREE.BoxGeometry(.3,.16,.48),shoe);boot.position.set(0,-.55,-.08);g.add(boot);}
+ const hpBack=new THREE.Sprite(new THREE.SpriteMaterial({color:'#1b2228',depthTest:false}));hpBack.position.set(0,3.05,0);hpBack.scale.set(1.35,.15,1);root.add(hpBack);const hpFill=new THREE.Sprite(new THREE.SpriteMaterial({color:'#e9a34d',depthTest:false}));hpFill.position.set(0,3.05,.012);hpFill.scale.set(1.28,.09,1);root.add(hpFill);
+ return {root,armL,armR,legL,legR,hpFill,anim:0,isEnemy:true,eliteVisual:true};
+}
+function makeHulkBoss(scene){
+ const root=new THREE.Group();scene.add(root);const skin=texturedMat('#4e963c','skin',91,.7),light=texturedMat('#70b65a','skin',92,.64),shadow=mat('#28552a',.88),shorts=texturedMat('#35264b','fabric',93,.88),hair=mat('#25231f',.95),eye=mat('#f0e5c8',.35);
+ const part=(geo,material,pos,scale,rot)=>{const m=new THREE.Mesh(geo,material);m.position.set(...pos);if(scale)m.scale.set(...scale);if(rot)m.rotation.set(...rot);m.castShadow=true;m.receiveShadow=true;root.add(m);return m;};
+ const muscle=(x,y,z,sx,sy,sz,material=skin,rot=0)=>part(new THREE.SphereGeometry(1,40,32),material,[x,y,z],[sx,sy,sz],[0,0,rot]);
+ muscle(0,1.68,0,.77,.66,.39);muscle(-.34,1.78,-.31,.43,.29,.19,light);muscle(.34,1.78,-.31,.43,.29,.19,light);muscle(0,1.2,-.03,.5,.37,.31);
+ for(let row=0;row<3;row++)for(const side of [-1,1])muscle(side*.19,1.43-row*.17,-.31,.17,.105,.085,row===1?light:skin);
+ muscle(0,2.27,-.02,.34,.38,.31);muscle(0,2.48,-.03,.35,.18,.3,hair);muscle(-.16,2.25,-.28,.13,.09,.1,shadow);muscle(.16,2.25,-.28,.13,.09,.1,shadow);part(new THREE.BoxGeometry(.4,.07,.08),hair,[0,2.36,-.3]);
+ for(const side of [-1,1]){part(new THREE.SphereGeometry(.035,16,12),eye,[side*.105,2.25,-.32]);muscle(side*.82,1.67,0,.35,.43,.34,light);muscle(side*1.03,1.23,-.02,.27,.48,.25);muscle(side*1.1,.79,-.01,.2,.24,.2,light);muscle(side*.28,.62,0,.25,.48,.27);muscle(side*.28,.27,-.01,.2,.23,.22,light);}
+ part(new THREE.CapsuleGeometry(.53,.32,8,16),shorts,[0,.63,0],[1,.75,.8]);part(new THREE.BoxGeometry(.12,.22,.1),shadow,[0,.47,-.29]);
+ const armL=new THREE.Group(),armR=new THREE.Group();armL.position.set(-.78,1.72,0);armR.position.set(.78,1.72,0);root.add(armL,armR);
+ for(const [g,side] of [[armL,-1],[armR,1]]){const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.24,.58,8,16),skin);upper.position.set(side*.13,-.3,0);upper.scale.set(1.1,1,.95);upper.castShadow=true;g.add(upper);const fore=new THREE.Mesh(new THREE.CapsuleGeometry(.21,.58,8,16),light);fore.position.set(side*.18,-.82,-.01);fore.castShadow=true;g.add(fore);const fist=new THREE.Mesh(new THREE.SphereGeometry(.24,24,18),skin);fist.position.set(side*.2,-1.18,-.03);fist.scale.set(1.15,.9,1);g.add(fist);}
+ const legL=new THREE.Group(),legR=new THREE.Group();legL.position.set(-.27,.55,0);legR.position.set(.27,.55,0);root.add(legL,legR);
+ for(const g of [legL,legR]){const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.22,.65,8,16),skin);leg.position.y=-.35;leg.castShadow=true;g.add(leg);const foot=new THREE.Mesh(new THREE.BoxGeometry(.38,.22,.62),skin);foot.position.set(0,-.78,-.1);g.add(foot);}
+ return {root,armL,armR,legL,legR,anim:0,isEnemy:true,bossVisual:'hulk'};
+}
+function makeOtherBoss(scene,type){
+ const root=new THREE.Group();scene.add(root);const stone=type===2,base=stone?texturedMat('#667b89','stone',202,.94,.18):texturedMat('#211c2e','fabric',303,.68,.55),trim=mat(stone?'#a8c2ce':'#9a55d9',.28,.82),glow=new THREE.MeshStandardMaterial({color:stone?'#6bcfff':'#bd68ff',emissive:stone?'#2589c8':'#7b24d1',emissiveIntensity:1.8,metalness:.4,roughness:.2});
+ const part=(geo,material,pos,scale,rot)=>{const m=new THREE.Mesh(geo,material);m.position.set(...pos);if(scale)m.scale.set(...scale);if(rot)m.rotation.set(...rot);m.castShadow=true;m.receiveShadow=true;root.add(m);return m;};
+ part(new THREE.CapsuleGeometry(stone?.62:.42,stone?1.05:.72,8,16),base,[0,1.35,0],[stone?1.25:1,1,stone?1.05:.85]);part(new THREE.SphereGeometry(stone?.39:.28,32,24),base,[0,2.48,-.02],[1,1.1,.9]);
+ if(stone){for(const side of [-1,1]){part(new THREE.DodecahedronGeometry(.52),base,[side*.68,1.55,0],[1.15,1.1,1]);part(new THREE.BoxGeometry(.26,.72,.25),trim,[side*.76,.9,-.02]);part(new THREE.BoxGeometry(.28,.25,.3),base,[side*.24,.36,0]);}part(new THREE.BoxGeometry(.7,.14,.12),trim,[0,2.48,-.28]);}
+ else{part(new THREE.ConeGeometry(.48,.9,8),base,[0,2.9,.12]);for(const side of [-1,1]){part(new THREE.ConeGeometry(.18,.85,8),trim,[side*.52,1.8,.02],[1,1,1],[0,0,-side*.65]);part(new THREE.BoxGeometry(.08,.62,.1),glow,[side*.19,1.42,-.32]);}part(new THREE.TorusGeometry(.72,.055,10,32),glow,[0,1.2,0],[1,1,1],[Math.PI/2,0,0]);}
+ const armL=new THREE.Group(),armR=new THREE.Group();armL.position.set(-.52,1.72,0);armR.position.set(.52,1.72,0);root.add(armL,armR);
+ for(const [g,side] of [[armL,-1],[armR,1]]){const arm=new THREE.Mesh(new THREE.CapsuleGeometry(stone?.22:.14,.65,7,12),base);arm.position.set(side*.08,-.38,0);arm.castShadow=true;g.add(arm);const hand=new THREE.Mesh(new THREE.DodecahedronGeometry(.24),trim);hand.position.set(side*.12,-.83,0);g.add(hand);}
+ const legL=new THREE.Group(),legR=new THREE.Group();legL.position.set(-.22,.65,0);legR.position.set(.22,.65,0);root.add(legL,legR);
+ for(const g of [legL,legR]){const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.2,.58,7,12),base);leg.position.y=-.32;g.add(leg);}
+ return {root,armL,armR,legL,legR,anim:0,isEnemy:true,bossVisual:stone?'stone-colossus':'void-reaper'};
+}
+
 export class FighterGame{
  constructor(world){
   this.world=world;this.scene=world.scene;this.camera=world.camera;this.renderer=world.renderer;
