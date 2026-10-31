@@ -71,7 +71,7 @@ export class FighterGame{
 ];let items=[];catalog.forEach(([names,kind],ci)=>names.forEach((name,i)=>items.push({id:'goods_'+(ci*20+i+1),name,category:this.shopCategories[ci],desc:['战场即时补给与恢复','永久提升近战输出能力','强化枪械伤害与操控','提高生存能力与承伤上限','提供特殊战术与战场控制'][ci]+' · 等级 '+(1+Math.floor(i/4)),price:25+ci*12+i*9,kind,tier:1+Math.floor(i/4),index:i})));return items;})();
   this.enemies=[];this.realisticAsset=null;this.realisticAssetError=null;this.bullets=[];this.waves=[];this.particles=[];
   this.keys={};this.mobile={x:0,y:0};this.hp=100;this.xp=0;this.block=false;this.attackTime=0;this.iaidoTime=0;this.dodgeTime=0;this.invuln=0;this.combo=0;this.comboWindow=0;this.parryWindow=0;this.buff=null;this.buffTime=0;
-  this.swordCharge=0;this.swordColor='#e7edf2';this.swordId='starter';this.gold=Number(localStorage.getItem('ns_gold')||0);this.kills=Number(localStorage.getItem('ns_kills')||0);this.achievements=readSaved('ns_achievements',[]);this.achievementRecords=readSaved('ns_achievement_records',[]);this.bestCombo=Number(localStorage.getItem('ns_best_combo')||0);this.ownedSwords=readSaved('ns_owned_swords',[]);this.weaponOwned=readSaved('ns_weapon_owned',{solar:false,demon:false,ak:false});this.activeWeapon='katana';this.weaponVisual=null;this.districtProgress=0;this.lastDistrictMark=0;this.bossActive=false;this.bossCount=0;this.timeStop=0;this.chest=null;this.onWeaponChest=null;this.onStatsToggle=null;this.onWeaponChange=null;const savedSword=localStorage.getItem('ns_sword');if(savedSword&&this.ownedSwords.includes(savedSword))this.equipSword(savedSword);
+  this.swordCharge=0;this.swordColor='#e7edf2';this.swordId='starter';this.gold=Number(localStorage.getItem('ns_gold')||0);this.kills=Number(localStorage.getItem('ns_kills')||0);this.achievements=readSaved('ns_achievements',[]);this.achievementRecords=readSaved('ns_achievement_records',[]);this.bestCombo=Number(localStorage.getItem('ns_best_combo')||0);this.ownedSwords=readSaved('ns_owned_swords',[]);this.weaponOwned=readSaved('ns_weapon_owned',{solar:false,demon:false,ak:false});this.activeWeapon='katana';this.weaponVisual=null;this.districtProgress=0;this.lastDistrictMark=0;this.bossActive=false;this.bossCount=0;this.timeStop=0;this.chest=null;this.onWeaponChest=null;this.onStatsToggle=null;this.onWeaponChange=null;this.savedSword=localStorage.getItem('ns_sword');
   this.paused=false;this.started=false;this.clock=new THREE.Clock();this.lastUpdate=0;this.cameraYaw=0;this.cameraPitch=.04;this.cameraDistance=0;this.pointerLocked=false;this.dodgeDir=new THREE.Vector3(0,0,-1);this.gameOver=false;this.bind();
  }
  async initializeFirstEncounter(onProgress=()=>{}){
@@ -80,7 +80,7 @@ export class FighterGame{
   onProgress(0.05,'正在创建玩家模型…');await yieldFrame();
   this.scene.remove(this.player.root);this.player=makeFighter(this.scene,false);this.player.root.position.set(0,0,5);this.player.root.rotation.y=Math.PI;this.player.root.visible=false;
   onProgress(0.2,'正在创建第一人称武器…');await yieldFrame();
-  this.createFirstPersonWeapon();await yieldFrame();
+  this.createFirstPersonWeapon();if(this.savedSword&&this.ownedSwords.includes(this.savedSword))this.equipSword(this.savedSword);await yieldFrame();
   onProgress(0.3,'正在准备初始敌人…');
   this.enemies=[];this.bullets=[];this.waves=[];this.bossActive=false;
   const n=(this.districtNumber-1)%6+1;
