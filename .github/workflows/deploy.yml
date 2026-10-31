@@ -20,6 +20,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Download CC0 rigged human character
+        run: |
+          mkdir -p public/models
+          curl --fail --location --retry 4 --retry-delay 2 \\
+            "https://files.innerscene.com/library/locomotion-collection-harper-3d-person-animated-797e1e2a/9f8c001a7561fb4ad2e7/locomotion-collection-harper-3d-person-animated.glb" \\
+            --output public/models/harper-locomotion.glb
+          test "$(stat -c%s public/models/harper-locomotion.glb)" -gt 1000000
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Build
