@@ -4,6 +4,14 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
+
+const yieldToUI = () => new Promise(resolve => {
+  let finished = false;
+  const finish = () => { if (finished) return; finished = true; resolve(); };
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(finish);
+  setTimeout(finish, 40);
+});
+
 const mat = (color, roughness = .8, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
 function box(w, h, d, material, x, y, z, group) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
@@ -90,7 +98,7 @@ export async function createWorld(onProgress = () => {}) {
   const totalBuildings = 36;
   let builtBuildings = 0;
   onProgress(12, '正在生成街区建筑与楼层立面…');
-  await new Promise(resolve => requestAnimationFrame(resolve));
+  await yieldToUI();
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
     for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
       const x = sx * (17 + i * 9.5), z = sz * (17 + j * 9.5);
@@ -98,7 +106,7 @@ export async function createWorld(onProgress = () => {}) {
       makeBuilding(city, x, z, w, d, h, colors[seed % colors.length], seed++);
       builtBuildings++;
       onProgress(12 + builtBuildings / totalBuildings * 62, `正在构建建筑模型 ${builtBuildings}/${totalBuildings}…`);
-      await new Promise(resolve => requestAnimationFrame(resolve));
+      await yieldToUI();
     }
   }
   const trunk = mat('#59483a'), leaves = mat('#435d4c'), bench = mat('#564b3e'), bin = mat('#34484a');
@@ -120,17 +128,17 @@ export async function createWorld(onProgress = () => {}) {
     box(7, h, 7, mat('#65777a'), Math.sin(a) * r, h / 2, Math.cos(a) * r, city);
   }
   onProgress(78, '正在布置街灯、树木与街道设施…');
-  await new Promise(resolve => requestAnimationFrame(resolve));
+  await yieldToUI();
   const groundGrid = new THREE.GridHelper(120, 60, '#687579', '#687579');
   groundGrid.position.y = -.01; groundGrid.material.opacity = .12; groundGrid.material.transparent = true; scene.add(groundGrid);
   onProgress(88, '正在配置阴影、霓虹光效与画面后处理…');
-  await new Promise(resolve => requestAnimationFrame(resolve));
+  await yieldToUI();
   const composer=new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene,camera));
   composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.58,.7,.8));
   composer.addPass(new OutputPass());
   onProgress(94, '正在完成渲染管线与画面质量设置…');
-  await new Promise(resolve => requestAnimationFrame(resolve));
+  await yieldToUI();
   return {
     scene, camera, renderer, composer, city,
     resize() {
