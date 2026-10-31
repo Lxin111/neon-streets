@@ -12,3 +12,17 @@
 .loading-meta b{font:700 16px 'Barlow Condensed',sans-serif;letter-spacing:.04em;color:#e9c46a;font-variant-numeric:tabular-nums}
 .loading-meta span{font-size:11px;color:#b4c5ce;text-align:right}
 .loading-foot{margin-top:16px;color:#627b88!important;font:10px 'Barlow Condensed',sans-serif;letter-spacing:.2em}
+
+/* Menu click reliability and categorized armory layout */
+.topbar,.topbar button,.overlay,.menu-card,.menu-card button{pointer-events:auto}
+.topbar{z-index:5}.overlay{z-index:20}.menu-card{position:relative;z-index:21;touch-action:pan-y}
+.shop-menu{width:min(96vw,900px);max-height:90vh;padding:clamp(16px,3vw,28px)}
+.shop-list{max-height:62vh;overflow:auto;padding:4px 2px 14px;overscroll-behavior:contain}
+.shop-count,.achievement-summary{position:sticky;top:0;padding:10px;background:#0c1922;color:#e9c46a;border:1px solid #ffffff1c;border-radius:7px;font-size:12px;z-index:2}
+.shop-category{margin:10px 0 18px}.shop-category-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.shop-category .shop-subhead{position:sticky;top:42px;padding:8px 4px;background:#101c25;z-index:1}
+.shop-item{min-height:88px;cursor:pointer;touch-action:manipulation;transition:transform .12s,border-color .12s}
+.shop-item:active,.top-btn:active{transform:scale(.98);border-color:#e9c46a}
+.shop-item strong{margin-top:auto}.list-row{gap:12px;align-items:center}.list-row span{display:flex;flex-direction:column;gap:4px}.list-row small{font-size:10px;color:#92a4ae}.list-row strong{white-space:nowrap;color:#e9c46a;font-size:11px}.list-row.earned{background:#15302155}
+.top-btn{cursor:pointer;touch-action:manipulation;position:relative;z-index:7}
+@media(max-width:700px){.shop-menu{width:96vw;max-height:92vh;padding:14px}.shop-list{max-height:68vh}.shop-category-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.shop-item{padding:9px;min-height:88px}.shop-item b{font-size:11px}.shop-item small{font-size:9px}.shop-item strong{font-size:10px}.shop-category .shop-subhead{top:40px}}
