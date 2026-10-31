@@ -43,7 +43,7 @@ function makeStreetLamp(group,x,z){
   box(.95,.09,.1,metal,x+.38,4.42,z,group);box(.42,.14,.3,glow,x+.76,4.3,z,group);
   const light=new THREE.PointLight('#42dfff',15,12,2);light.position.set(x+.76,4.05,z);group.add(light);
 }
-export function createWorld() {
+export async function createWorld(onProgress = () => {}) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#07111f');
   scene.fog = new THREE.FogExp2('#101d31', .009);
@@ -87,11 +87,18 @@ export function createWorld() {
   }
   const colors = ['#77746c', '#625f59', '#777d7b', '#665f59', '#8a8174', '#58676a'];
   let seed = 1;
+  const totalBuildings = 36;
+  let builtBuildings = 0;
+  onProgress(12, '正在生成街区建筑与楼层立面…');
+  await new Promise(resolve => requestAnimationFrame(resolve));
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
     for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
       const x = sx * (17 + i * 9.5), z = sz * (17 + j * 9.5);
       const w = 7.2 + (i % 2) * 1.4, d = 7.2 + (j % 2) * 1.2, h = 8 + (i * 3 + j * 2 + (seed % 3) * 2);
       makeBuilding(city, x, z, w, d, h, colors[seed % colors.length], seed++);
+      builtBuildings++;
+      onProgress(12 + builtBuildings / totalBuildings * 62, `正在构建建筑模型 ${builtBuildings}/${totalBuildings}…`);
+      await new Promise(resolve => requestAnimationFrame(resolve));
     }
   }
   const trunk = mat('#59483a'), leaves = mat('#435d4c'), bench = mat('#564b3e'), bin = mat('#34484a');
@@ -112,12 +119,18 @@ export function createWorld() {
     const a = i / 22 * Math.PI * 2, r = 65 + (i % 4) * 5, h = 16 + (i * 7 % 22);
     box(7, h, 7, mat('#65777a'), Math.sin(a) * r, h / 2, Math.cos(a) * r, city);
   }
+  onProgress(78, '正在布置街灯、树木与街道设施…');
+  await new Promise(resolve => requestAnimationFrame(resolve));
   const groundGrid = new THREE.GridHelper(120, 60, '#687579', '#687579');
   groundGrid.position.y = -.01; groundGrid.material.opacity = .12; groundGrid.material.transparent = true; scene.add(groundGrid);
+  onProgress(88, '正在配置阴影、霓虹光效与画面后处理…');
+  await new Promise(resolve => requestAnimationFrame(resolve));
   const composer=new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene,camera));
   composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.58,.7,.8));
   composer.addPass(new OutputPass());
+  onProgress(94, '正在完成渲染管线与画面质量设置…');
+  await new Promise(resolve => requestAnimationFrame(resolve));
   return {
     scene, camera, renderer, composer, city,
     resize() {
