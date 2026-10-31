@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
-const baseURL = 'http://127.0.0.1:4173/neon-streets/';
+const baseURL = 'http://127.0.0.1:4173/';
 const server = spawn('npm', ['run', 'preview', '--', '--host', '127.0.0.1', '--port', '4173', '--strictPort'], { stdio: 'inherit' });
 let browser;
 const pageErrors = [];
