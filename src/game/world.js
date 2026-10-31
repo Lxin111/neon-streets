@@ -142,7 +142,7 @@ export async function createWorld(onProgress = () => {}) {
       const w = 7.2 + (i % 2) * 1.4, d = 7.2 + (j % 2) * 1.2, h = 8 + (i * 3 + j * 2 + (seed % 3) * 2);
       makeBuilding(city, x, z, w, d, h, colors[seed % colors.length], seed++);
       // Solid footprint for the complete building: floors and facade details share one wall collider.
-      buildingColliders.push({ minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 });
+      buildingColliders.push({ type: 'box', minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 });
       builtBuildings++;
       onProgress(12 + builtBuildings / totalBuildings * 62, `正在构建建筑模型 ${builtBuildings}/${totalBuildings}…`);
       await yieldToUI();
@@ -154,14 +154,17 @@ export async function createWorld(onProgress = () => {}) {
     t.position.set(x, 1, z); t.castShadow = true; city.add(t);
     const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(1.35, 1), leaves);
     crown.position.set(x, 2.55, z); crown.castShadow = true; city.add(crown);
+    // Treat the whole visible tree (trunk + low canopy) as a solid obstacle.
+    buildingColliders.push({ type: 'circle', x, z, r: 1.12 });
   }
-  for (const [x, z] of [[-9, -9], [9, -9], [-9, 9], [9, 9], [-20, 0], [20, 0], [0, 20], [0, -20]]) makeStreetLamp(city, x, z);
+  for (const [x, z] of [[-9, -9], [9, -9], [-9, 9], [9, 9], [-20, 0], [20, 0], [0, 20], [0, -20]]) { makeStreetLamp(city, x, z); buildingColliders.push({ type: 'circle', x: x + .38, z, r: .48 }); }
   for (const [x, z] of [[-8, -12], [8, 12], [-18, 8], [18, -8]]) {
     box(2.2, .18, .65, bench, x, .62, z, city);
     box(.12, .65, .12, bench, x - .8, .32, z, city);
     box(.12, .65, .12, bench, x + .8, .32, z, city);
+    buildingColliders.push({ type: 'box', minX: x - 1.12, maxX: x + 1.12, minZ: z - .38, maxZ: z + .38 });
   }
-  for (const [x, z] of [[-10, 3], [10, -3], [-23, -13], [23, 13]]) box(.75, 1.15, .75, bin, x, .58, z, city);
+  for (const [x, z] of [[-10, 3], [10, -3], [-23, -13], [23, 13]]) { box(.75, 1.15, .75, bin, x, .58, z, city); buildingColliders.push({ type: 'box', minX: x - .48, maxX: x + .48, minZ: z - .48, maxZ: z + .48 }); }
   for (let i = 0; i < 22; i++) {
     const a = i / 22 * Math.PI * 2, r = 65 + (i % 4) * 5, h = 16 + (i * 7 % 22);
     box(7, h, 7, mat('#65777a'), Math.sin(a) * r, h / 2, Math.cos(a) * r, city);
