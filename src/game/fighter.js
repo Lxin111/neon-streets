@@ -111,7 +111,8 @@ export class FighterGame {
     const forward = (this.keys.KeyW || this.keys.ArrowUp ? 1 : 0) - (this.keys.KeyS || this.keys.ArrowDown ? 1 : 0) + this.mobile.y;
     const side = (this.keys.KeyD || this.keys.ArrowRight ? 1 : 0) - (this.keys.KeyA || this.keys.ArrowLeft ? 1 : 0) + this.mobile.x;
     const move = new THREE.Vector3(side, 0, -forward); if (move.lengthSq() > 1) move.normalize();
-    const speed = this.keys.ShiftLeft || this.keys.ShiftRight ? 8 : 5.2;\n    if (this.dodgeTime > 0) p.position.addScaledVector(this.dodgeDir, 10 * dt);
+    const speed = this.keys.ShiftLeft || this.keys.ShiftRight ? 8 : 5.2;
+    if (this.dodgeTime > 0) p.position.addScaledVector(this.dodgeDir, 10 * dt);
     if (move.lengthSq() > .01) {
       const angle = Math.atan2(move.x, -move.z) + this.cameraYaw;
       p.rotation.y = THREE.MathUtils.lerp(p.rotation.y, angle, Math.min(1, dt * 12));
