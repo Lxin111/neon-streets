@@ -20,12 +20,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - name: Install dependencies
-        run: npm install
+        run: npm install --no-audit --no-fund
       - name: Build
         run: npm run build
       - name: Upload Pages artifact
