@@ -18,20 +18,21 @@ const app=document.querySelector('#app');
 const world=await createWorld(setLoadingProgress);
 app.prepend(world.renderer.domElement);
 let game;
+let startupStage='准备战斗系统';
 const hud=document.querySelector('#hud');
 try {
- setLoadingProgress(96,'正在准备战斗系统…');
+ startupStage='准备战斗系统';setLoadingProgress(96,'正在准备战斗系统…');
  await nextFrame();
  setLoadingProgress(96.01,'正在初始化战斗控制…');
- game=new FighterGame(world);
+ startupStage='创建战斗控制器';game=new FighterGame(world);
  setLoadingProgress(96.05,'正在分阶段初始化玩家与敌人…');
- await game.initializeFirstEncounter((ratio,task)=>setLoadingProgress(96.05+ratio*.9,task||'正在初始化战斗… '+Math.round(ratio*100)+'%'));
+ startupStage='创建玩家模型和初始敌人';await game.initializeFirstEncounter((ratio,task)=>setLoadingProgress(96.05+ratio*.9,task||'正在初始化战斗… '+Math.round(ratio*100)+'%'));
  await nextFrame();
  setLoadingProgress(97,'正在载入真人扫描模型、4K材质与动作捕捉…');
- const modelLoaded=await game.loadRealisticEnemyModel(ratio=>setLoadingProgress(97+ratio*2,'正在载入真人扫描模型与动作捕捉…'));
+ startupStage='加载真人扫描角色模型';const modelLoaded=await game.loadRealisticEnemyModel(ratio=>setLoadingProgress(97+ratio*2,'正在载入真人扫描模型与动作捕捉…'));
  setLoadingProgress(99,modelLoaded?'正在启动战斗系统与操作控制…':'真人扫描模型暂不可用，正在启用基础角色…');
  await nextFrame();
- game.start();
+ startupStage='启动游戏主循环';game.start();
  setLoadingProgress(100,'加载完成，进入街区！');
  await new Promise(resolve=>setTimeout(resolve,260));
  loading.classList.add('hidden');
@@ -41,7 +42,7 @@ try {
  loading.classList.remove('hidden');
  loadingPercent.textContent='!';
  loadingBar.style.width='100%';
- loadingTask.textContent='启动失败：'+(error?.message||String(error))+'。请刷新页面重试。';
+ const detail=(error?.stack||'').split('\\n').slice(0,4).join(' | ');loadingTask.textContent='启动失败（'+startupStage+'）：'+(error?.message||String(error))+(detail?' · '+detail:'')+'。';
  throw error;
 }
 const hpBar=document.querySelector('#hpBar'),hpText=document.querySelector('#hpText'),xpBar=document.querySelector('#xpBar'),xpText=document.querySelector('#xpText'),enemyCount=document.querySelector('#enemyCount'),objective=document.querySelector('#objective'),toastEl=document.querySelector('#toast'),buffEl=document.querySelector('#buffStatus'),goldEl=document.querySelector('#goldCount'),chargeEl=document.querySelector('#chargeCount');
