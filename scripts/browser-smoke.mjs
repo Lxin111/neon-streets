@@ -48,6 +48,18 @@ try {
   console.log('PAGE_ERRORS=0');
   console.log('CONSOLE_ERRORS=' + consoleErrors.length);
   if (consoleErrors.length) console.log(consoleErrors.join('\n'));
+  const livePage = await context.newPage();
+  const liveFailures = [];
+  livePage.on('requestfailed', request => liveFailures.push(request.url() + ' :: ' + (request.failure()?.errorText || 'failed')));
+  livePage.on('response', response => { if (response.status() >= 400) liveFailures.push(response.status() + ' ' + response.url()); });
+  livePage.on('pageerror', error => liveFailures.push('PAGE ERROR: ' + (error.stack || error.message)));
+  await livePage.goto('https://lxin111.github.io/neon-streets/', { waitUntil: 'domcontentloaded', timeout: 90000 });
+  await livePage.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 120000 });
+  await livePage.locator('canvas').waitFor({ state: 'visible', timeout: 15000 });
+  await livePage.screenshot({ path: 'artifacts/game-live-site.png', fullPage: true });
+  if (liveFailures.length) throw new Error('Live site network/runtime failures:\\n' + liveFailures.join('\\n'));
+  console.log('PASS: published GitHub Pages site starts and renders');
+
 } catch (error) {
   if (browser) {
     try { const pages = browser.contexts().flatMap(context => context.pages()); if (pages[0]) await pages[0].screenshot({ path: 'artifacts/failure.png', fullPage: true }); } catch {}
