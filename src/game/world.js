@@ -99,7 +99,7 @@ export function createWorld() {
     scene, camera, renderer, city,
     resize() {
       camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
-      renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio, 1.8));
+      renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio, matchMedia('(pointer: coarse)').matches ? 1.25 : 1.8));
     }
   };
 }
