@@ -31,6 +31,9 @@ jobs:
           curl --fail --location --retry 3 --retry-delay 2 "https://renderpeople.com/sample/free/renderpeople_free_animated_people_FBX.zip" --output /tmp/renderpeople-animated.zip
           echo "Renderpeople animated scan archive contents:"
           unzip -l /tmp/renderpeople-animated.zip | head -80
+          unzip -p /tmp/renderpeople-animated.zip rp_nathan_animated_003_walking_FBX.zip > /tmp/renderpeople-nathan.zip
+          echo "Nathan scanned model package contents:"
+          unzip -l /tmp/renderpeople-nathan.zip | head -80
       - name: Download CC0 rigged human character
         run: |
           mkdir -p public/models
