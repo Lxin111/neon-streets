@@ -1,8 +1,33 @@
 import './style.css';
 import {createWorld} from './game/world.js';
 import {FighterGame,SWORDS} from './game/fighter.js';
-const app=document.querySelector('#app'),world=createWorld();app.prepend(world.renderer.domElement);
-const game=new FighterGame(world);game.start();const hud=document.querySelector('#hud');document.querySelector('#loading').classList.add('hidden');hud.classList.remove('hidden');
+const loading=document.querySelector('#loading');
+const loadingBar=document.querySelector('#loadingBar');
+const loadingPercent=document.querySelector('#loadingPercent');
+const loadingTask=document.querySelector('#loadingTask');
+function setLoadingProgress(value,task){
+  const percent=Math.max(0,Math.min(100,value));
+  loadingBar.style.width=percent.toFixed(2)+'%';
+  loadingPercent.textContent=percent.toFixed(2)+'%';
+  loadingTask.textContent=task;
+}
+const nextFrame=()=>new Promise(resolve=>requestAnimationFrame(resolve));
+setLoadingProgress(3,'正在初始化 WebGL 图形设备…');
+await nextFrame();
+const app=document.querySelector('#app');
+const world=await createWorld(setLoadingProgress);
+app.prepend(world.renderer.domElement);
+setLoadingProgress(96,'正在创建玩家角色、武器与敌人…');
+await nextFrame();
+const game=new FighterGame(world);
+setLoadingProgress(99,'正在启动战斗系统与操作控制…');
+await nextFrame();
+game.start();
+const hud=document.querySelector('#hud');
+setLoadingProgress(100,'加载完成，进入街区！');
+await new Promise(resolve=>setTimeout(resolve,260));
+loading.classList.add('hidden');
+hud.classList.remove('hidden');
 const hpBar=document.querySelector('#hpBar'),hpText=document.querySelector('#hpText'),xpBar=document.querySelector('#xpBar'),xpText=document.querySelector('#xpText'),enemyCount=document.querySelector('#enemyCount'),objective=document.querySelector('#objective'),toastEl=document.querySelector('#toast'),buffEl=document.querySelector('#buffStatus'),goldEl=document.querySelector('#goldCount'),chargeEl=document.querySelector('#chargeCount');
 function renderLists(){document.querySelector('#achievementList').innerHTML=[10,100,...Array.from({length:Math.max(0,Math.floor((game.kills-100)/100))},(_,i)=>200+i*100)].map(n=>'<div class="list-row"><span>击败 '+n+' 名敌人</span><b>'+(game.achievements.includes(n)?'已完成 ✓':'奖励 10 金币')+'</b></div>').join('');document.querySelector('#shopList').innerHTML='<h3 class="shop-subhead">战斗强化</h3>'+game.shopItems.map(x=>'<button class="shop-item" data-buy-item="'+x.id+'"><b>'+x.name+'</b><small>'+x.desc+'</small><strong>'+x.price+' 金币</strong></button>').join('')+'<h3 class="shop-subhead">元素太刀</h3>'+SWORDS.map(x=>'<button class="sword-card" data-sword="'+x.id+'"><i style="--blade:'+x.color+'"></i><span>'+x.name+'太刀</span><b>'+(game.swordId===x.id?'已装备':game.ownedSwords.includes(x.id)?'已拥有':'10 金币')+'</b></button>').join('');document.querySelectorAll('[data-sword]').forEach(b=>b.addEventListener('click',()=>{game.buySword(b.dataset.sword);renderLists();}));document.querySelectorAll('[data-buy-item]').forEach(b=>b.addEventListener('click',()=>{game.buyShopItem(b.dataset.buyItem);renderLists();}));}
 game.onUpdate=s=>{document.querySelector('#statHealth').textContent=Math.ceil(s.hp)+' / '+s.maxHp;document.querySelector('#statAttack').textContent=s.attack;document.querySelector('#statSpeed').textContent=Math.round(s.attackSpeed*100)+'%';document.querySelector('#statCrit').textContent=s.crit.toFixed(0)+'%';document.querySelector('#statCritDmg').textContent=s.critDamage.toFixed(0)+'%';document.querySelector('#statCores').textContent=game.cores.length+' / 10';document.querySelector('#coreCount').textContent=game.cores.length+' / 10';document.querySelector('#coreSlots').innerHTML=game.coreSlots.map(c=>'<i title="'+(c?.name||'空核心槽')+'" class="'+(c?'filled':'')+'">'+(c?'✦':'·')+'</i>').join('');document.querySelector('#statsCoreSlots').innerHTML=document.querySelector('#coreSlots').innerHTML;hpBar.style.width=s.hp+'%';hpText.textContent=Math.ceil(s.hp)+' / '+s.maxHp;hpBar.style.width=(s.hp/s.maxHp*100)+'%';xpBar.style.width=s.xp+'%';xpText.textContent=s.xp+' / 100';enemyCount.textContent='剩余敌人：'+s.enemies;buffEl.textContent=s.buff?'强化效果：'+s.buff+' · '+s.buffTime.toFixed(1)+'s':'当前强化：无';goldEl.textContent=s.gold;chargeEl.textContent='自动';if(s.enemies===0&&game.encounterCleared)objective.textContent='街区已清理 · 向前走';if(s.poison>0)buffEl.textContent='中毒 '+s.poison.toFixed(1)+'s · 攻速/移速 -50%';};
