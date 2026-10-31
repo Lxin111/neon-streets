@@ -7,7 +7,7 @@ A browser-based third-person street-fighting prototype built with Three.js and V
 - Third-person camera and keyboard movement
 - Five basic enemy AI fighters
 - Light combo attacks, dodge, block and health/XP HUD
-- Touch joystick and action buttons for mobile browsers
+- Touch joystick, swipe-to-rotate camera and action buttons for mobile browsers\n- Directional dodge dash with brief invulnerability and a defeat/retry screen\n- Reduced rendering resolution and disabled dynamic shadows on touch devices
 - GitHub Actions workflow for GitHub Pages
 
 ## Controls
@@ -40,7 +40,7 @@ npm run preview
 ## Deploy to GitHub Pages
 1. Push this repository to GitHub with the default branch named `main`.
 2. Open **Settings → Pages**.
-3. Under **Build and deployment**, select **GitHub Actions** as the source.
+3. Under **Build and deployment**, select **GitHub Actions** as the source. This one-time Pages activation must be done by the repository owner.
 4. Push to `main` or run the workflow manually from **Actions**.
 5. The deployment job publishes the `dist/` folder.
 
