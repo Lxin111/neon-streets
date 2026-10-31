@@ -1,59 +1,79 @@
 # NEON STREETS / 霓虹街区
 
-A browser-based third-person street-fighting prototype built with Three.js and Vite.
+**一个基于 Three.js 的赛博朋克风格第一人称近战动作游戏。**  
+在霓虹街区中击败敌人、挑战 Boss、收集核心、强化角色，并沿道路不断推进到下一个街区。
 
-## Current prototype
-- Procedurally generated compact city block
-- Third-person camera and keyboard movement
-- Five basic enemy AI fighters
-- Light combo attacks, dodge, block and health/XP HUD
-- Touch joystick, swipe-to-rotate camera and action buttons for mobile browsers
-- Directional dodge dash with brief invulnerability and a defeat/retry screen
-- Reduced rendering resolution and disabled dynamic shadows on touch devices
-- GitHub Actions workflow for GitHub Pages
+- **在线游玩：** https://lxin111.github.io/neon-streets/
+- **项目仓库：** https://github.com/Lxin111/neon-streets
+- **引擎与技术：** Three.js 0.180 + Vite 7
+- **运行平台：** 支持现代桌面与移动浏览器；移动端提供触屏操作
 
-## Controls
-- `W A S D` / arrow keys: move
-- `Shift`: sprint
-- Mouse: rotate camera (click the game to lock pointer)
-- Left mouse / `J` / `Enter`: attack
-- `Space`: dodge
-- `K`: hold to block
-- `Esc`: release pointer lock
+## 游戏特色
 
-On touch devices, use the virtual joystick and on-screen buttons.
+- **第一人称战斗：** 眼部视角、鼠标转向、近战挥砍与可发射的剑气。
+- **霓虹城市：** 程序化生成楼宇立面、楼层窗户、霓虹招牌、街灯和城市装饰。
+- **动态画面效果：** ACES 色调映射、软阴影、环境光与 Bloom 泛光后处理。
+- **敌人与 Boss：** 普通敌人、精英敌人，以及多种拥有独立攻击方式的 Boss。
+- **街区推进：** 每六个街区组成一个循环；清理当前街区后，必须实际走到道路出口才能进入下一区域。
+- **武器系统：** 太刀、太阳神剑、魔刀千刃与 AK47 等可切换武器。
+- **角色成长：** 经验、金币、商店强化、核心收集与手动装备。
+- **成就系统：** 根据累计击杀数解锁成就并获得金币奖励。
+- **移动端支持：** 虚拟摇杆、触屏视角控制和屏幕战斗按钮。
+- **启动加载界面：** 显示两位小数的加载进度，以及当前正在初始化的内容。
 
-## Run locally
-Requires Node.js 20.19+ or 22.12+.
+## 操作说明
+
+### 桌面端
+| 操作 | 功能 |
+| --- | --- |
+| WASD / 方向键 | 移动 |
+| Shift | 冲刺 |
+| 鼠标移动 | 转动第一人称视角 |
+| 点击游戏画面 | 请求鼠标指针锁定 |
+| 鼠标左键 | 普通攻击 |
+| R | 武器奥义 |
+| E | 开启附近宝箱 |
+| C | 打开 / 关闭角色属性与核心面板 |
+| 数字键 1–4 | 切换已解锁武器 |
+| Esc | 释放鼠标指针锁定 |
+
+### 移动端
+使用屏幕左侧虚拟摇杆移动，滑动屏幕调整视角，右侧按钮进行攻击、闪避、格挡、居合和武器切换。
+
+## 本地运行
+
+需要 Node.js 20.19+ 或 22.12+。
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite.
+使用浏览器打开 Vite 输出的本地地址。
 
-## Build
+## 构建与预览
+
 ```bash
 npm run build
 npm run preview
 ```
 
-## Deploy to GitHub Pages
-1. Push this repository to GitHub with the default branch named `main`.
-2. Open **Settings → Pages**.
-3. Under **Build and deployment**, select **GitHub Actions** as the source. This one-time Pages activation must be done by the repository owner.
-4. Push to `main` or run the workflow manually from **Actions**.
-5. The deployment job publishes the `dist/` folder.
+## GitHub Pages 部署
 
-The Vite `base: './'` setting supports GitHub project-site paths.
+仓库通过 GitHub Actions 自动构建并部署到 GitHub Pages。向 `main` 分支推送提交后会触发工作流。
 
-## Roadmap
-1. Replace procedural placeholder fighters/buildings with licensed or original high-quality assets.
-2. Add animation state machine, hit reactions, lock-on targeting and combat balancing.
-3. Add missions, dialogue, inventory, shops and multiple connected districts.
-4. Add graphics settings, quality presets, audio and save slots.
-5. Profile and optimize desktop/mobile performance.
+在线版本： https://lxin111.github.io/neon-streets/
 
-## Credits and licenses
-The prototype code is MIT-licensed. Third-party models, textures and audio must be added only with compatible licenses and credited individually.
+## 项目状态与后续计划
+
+这是一个持续开发中的浏览器游戏项目。当前城市与角色主要由程序化几何体和材质构成，并非直接使用《赛博朋克 2077》的原版资产，也不等同于光线追踪渲染。
+
+后续可继续完善：
+1. 高质量角色与敌人模型、动作动画和受击反馈。
+2. 地面湿润反射、动态广告牌、粒子与环境特效。
+3. 画质档位和移动设备性能自适应。
+4. 更多武器、Boss、街区事件与存档功能。
+
+## 许可证
+
+项目源代码采用 MIT License。后续加入的第三方模型、贴图、音乐和音效需遵守各自许可证并单独注明来源。
