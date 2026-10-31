@@ -38,7 +38,7 @@ export class FighterGame {
     this.keys = {}; this.mobile = { x: 0, y: 0 }; this.hp = 100; this.xp = 0; this.block = false;
     this.attackTime = 0; this.dodgeTime = 0; this.invuln = 0; this.combo = 0; this.comboWindow = 0;
     this.paused = false; this.started = false; this.clock = new THREE.Clock(); this.lastUpdate = 0;
-    this.cameraYaw = 0; this.cameraPitch = .25; this.cameraDistance = 7; this.pointerLocked = false;
+    this.cameraYaw = 0; this.cameraPitch = .25; this.cameraDistance = 7; this.pointerLocked = false; this.touchLookId = null; this.touchLookPoint = null; this.dodgeDir = new THREE.Vector3(0, 0, -1); this.gameOver = false;
     this.bind();
   }
   bind() {
@@ -93,7 +93,7 @@ export class FighterGame {
     } else this.onToast?.('挥拳！靠近敌人再攻击');
     this.updateUI();
   }
-  dodge() { if (this.paused || this.dodgeTime > 0) return; this.dodgeTime = .42; this.invuln = .5; this.onToast?.('闪避'); }
+  dodge() { if (this.paused || this.dodgeTime > 0) return; this.dodgeTime = .42; this.invuln = .5; this.dodgeDir.set(0, 0, -1).applyQuaternion(this.player.root.quaternion).normalize(); this.onToast?.('闪避'); }
   updateUI() {
     this.onUpdate?.({ hp: this.hp, xp: this.xp, enemies: this.enemies.filter(e => !e.dead).length });
     if (this.enemies.every(e => e.dead)) document.querySelector('#winOverlay').classList.remove('hidden');
@@ -111,7 +111,7 @@ export class FighterGame {
     const forward = (this.keys.KeyW || this.keys.ArrowUp ? 1 : 0) - (this.keys.KeyS || this.keys.ArrowDown ? 1 : 0) + this.mobile.y;
     const side = (this.keys.KeyD || this.keys.ArrowRight ? 1 : 0) - (this.keys.KeyA || this.keys.ArrowLeft ? 1 : 0) + this.mobile.x;
     const move = new THREE.Vector3(side, 0, -forward); if (move.lengthSq() > 1) move.normalize();
-    const speed = (this.keys.ShiftLeft || this.keys.ShiftRight ? 8 : 5.2) * (this.dodgeTime > 0 ? 2.2 : 1);
+    const speed = this.keys.ShiftLeft || this.keys.ShiftRight ? 8 : 5.2;\n    if (this.dodgeTime > 0) p.position.addScaledVector(this.dodgeDir, 10 * dt);
     if (move.lengthSq() > .01) {
       const angle = Math.atan2(move.x, -move.z) + this.cameraYaw;
       p.rotation.y = THREE.MathUtils.lerp(p.rotation.y, angle, Math.min(1, dt * 12));
@@ -132,7 +132,7 @@ export class FighterGame {
     this.camera.position.lerp(targetPos, 1 - Math.exp(-dt * 5));
     this.camera.lookAt(p.position.x, p.position.y + 1.35, p.position.z);
     if (performance.now() - this.lastUpdate > 100) { this.updateUI(); this.lastUpdate = performance.now(); }
-    if (this.hp <= 0) { this.hp = 0; this.pause(); this.onToast?.('你被击倒了'); }
+    if (this.hp <= 0 && !this.gameOver) { this.hp = 0; this.gameOver = true; this.paused = true; document.exitPointerLock?.(); document.querySelector('#pauseOverlay').classList.add('hidden'); document.querySelector('#gameOverOverlay').classList.remove('hidden'); this.onToast?.('你被击倒了'); }
   }
   updateEnemy(e, dt) {
     if (e.dead) return;
