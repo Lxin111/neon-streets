@@ -133,6 +133,7 @@ export async function createWorld(onProgress = () => {}) {
   let seed = 1;
   const totalBuildings = 36;
   let builtBuildings = 0;
+  const buildingColliders = [];
   onProgress(12, '正在生成街区建筑与楼层立面…');
   await yieldToUI();
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
@@ -140,6 +141,8 @@ export async function createWorld(onProgress = () => {}) {
       const x = sx * (17 + i * 9.5), z = sz * (17 + j * 9.5);
       const w = 7.2 + (i % 2) * 1.4, d = 7.2 + (j % 2) * 1.2, h = 8 + (i * 3 + j * 2 + (seed % 3) * 2);
       makeBuilding(city, x, z, w, d, h, colors[seed % colors.length], seed++);
+      // Solid footprint for the complete building: floors and facade details share one wall collider.
+      buildingColliders.push({ minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 });
       builtBuildings++;
       onProgress(12 + builtBuildings / totalBuildings * 62, `正在构建建筑模型 ${builtBuildings}/${totalBuildings}…`);
       await yieldToUI();
@@ -177,7 +180,7 @@ export async function createWorld(onProgress = () => {}) {
   await yieldToUI();
   flushBoxBatches(city);
   return {
-    scene, camera, renderer, composer, city,
+    scene, camera, renderer, composer, city, buildingColliders,
     resize() {
       camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
       renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,matchMedia('(pointer: coarse)').matches?1.2:2));composer.setSize(innerWidth,innerHeight);
