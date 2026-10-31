@@ -249,6 +249,8 @@ export class FighterGame{
   const colliders = this.world.buildingColliders || [];
   const segments = this.citySegments || [{ z: 0 }];
   const blocked = (x, z) => {
+   const dynamic = [this.chest?.group?.position, this.bossDrop?.group?.position].filter(Boolean);
+   for (const p of dynamic) { const dx=x-p.x,dz=z-p.z; if(dx*dx+dz*dz < (radius+.82)*(radius+.82)) return true; }
    for (const seg of segments) for (const c of colliders) {
     const cz = z - (seg.z || 0);
     if (c.type === 'circle') { const dx=x-c.x, dz=cz-c.z; if (dx*dx+dz*dz < (c.r+radius)*(c.r+radius)) return true; }
