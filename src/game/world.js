@@ -12,10 +12,24 @@ const yieldToUI = () => new Promise(resolve => {
   setTimeout(finish, 40);
 });
 
-const mat = (color, roughness = .8, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
-function box(w, h, d, material, x, y, z, group) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
-  m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; group.add(m); return m;
+// Reuse immutable materials and box geometries: the city contains thousands of facade details.
+const materialCache = new Map();
+const geometryCache = new Map();
+const mat = (color, roughness = .8, metalness = 0) => {
+  const key = [color, roughness, metalness].join('|');
+  if (!materialCache.has(key)) materialCache.set(key, new THREE.MeshStandardMaterial({ color, roughness, metalness }));
+  return materialCache.get(key);
+};
+const glowMat = (color, roughness, metalness, emissive, intensity) => {
+  const key = [color, roughness, metalness, emissive, intensity].join('|');
+  if (!materialCache.has(key)) materialCache.set(key, new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive, emissiveIntensity: intensity }));
+  return materialCache.get(key);
+};
+function box(w, h, d, material, x, y, z, group, castsShadow = false) {
+  const key = [w, h, d].join('|');
+  if (!geometryCache.has(key)) geometryCache.set(key, new THREE.BoxGeometry(w, h, d));
+  const m = new THREE.Mesh(geometryCache.get(key), material);
+  m.position.set(x, y, z); m.castShadow = castsShadow; m.receiveShadow = castsShadow; group.add(m); return m;
 }
 function makeBuilding(group,x,z,w,d,h,color,seed){
   const wall=mat(color,.78,.18),dark=mat('#101a25',.42,.72),trim=mat('#34485a',.34,.8);
@@ -28,21 +42,20 @@ function makeBuilding(group,x,z,w,d,h,color,seed){
     const count=Math.max(2,Math.floor(w/1.55));
     for(let i=0;i<count;i++){
       const wx=x-w/2+.78+i*1.55,lit=((seed*13+floor*7+i*3)%9)<6;
-      const pane=mat(lit?'#1b3c50':'#101a27',.16,.65);
-      if(lit){pane.emissive=new THREE.Color((i+floor)%4===0?'#ff8b45':neon);pane.emissiveIntensity=.45+((i+seed)%3)*.16;}
+      const pane=lit
+        ? glowMat('#1b3c50',.16,.65,(i+floor)%4===0?'#ff8b45':neon,.45+((i+seed)%3)*.16)
+        : mat('#101a27',.16,.65);
       box(.72,1.12,.075,pane,wx,y,z+d/2+.055,group);
       box(.78,.07,.1,dark,wx,y-.6,z+d/2+.09,group);
       if(i%2===0)box(.035,1.16,.085,trim,wx+.39,y,z+d/2+.1,group);
     }
-    if(floor%2===0){const strip=box(w*.82,.035,.1,mat('#162c3b',.3,.65),x,y+.78,z+d/2+.12,group);strip.material.emissive=new THREE.Color(neon);strip.material.emissiveIntensity=.8;}
+    if(floor%2===0) box(w*.82,.035,.1,glowMat('#162c3b',.3,.65,neon,.8),x,y+.78,z+d/2+.12,group);
   }
   for(const side of [-1,1])box(.16,h*.82,.22,trim,x+side*(w/2-.12),h*.43,z+d/2+.12,group);
   box(w*.74,.52,.16,dark,x,h*.7,z+d/2+.16,group);
-  const sign=box(w*.64,.29,.19,mat('#182b3b',.25,.5),x,h*.7,z+d/2+.27,group);
-  sign.material.emissive=new THREE.Color(neon);sign.material.emissiveIntensity=1.35;
+  box(w*.64,.29,.19,glowMat('#182b3b',.25,.5,neon,1.35),x,h*.7,z+d/2+.27,group);
   for(let k=0;k<3;k++)box(.38,.55,.42,trim,x-w*.25+k*w*.25,h+.28,z,group);
-  const roofLine=box(w+.18,.055,.14,mat('#182d3d',.25,.7),x,h+.13,z+d/2);
-  roofLine.material.emissive=new THREE.Color(neon);roofLine.material.emissiveIntensity=.9;
+  box(w+.18,.055,.14,glowMat('#182d3d',.25,.7,neon,.9),x,h+.13,z+d/2,group);
 }
 function makeStreetLamp(group,x,z){
   const metal=mat('#182a35',.32,.85),glow=new THREE.MeshStandardMaterial({color:'#b9f7ff',emissive:'#27dfff',emissiveIntensity:3.2});
