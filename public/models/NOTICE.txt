@@ -1,0 +1,8 @@
+NEON STREETS character asset notice
+
+Character: Nathan Animated 003 (walking)
+Source: Renderpeople official free Animated People sample pack
+Source archive: renderpeople_free_animated_people_FBX.zip
+Original source: photogrammetry-scanned human character with mocap walking animation and diffuse, gloss, and normal maps.
+Game conversion: FBX converted to GLB; 8K source maps downscaled to 4K for web delivery.
+Please retain the original Renderpeople license and usage terms when redistributing this asset.
