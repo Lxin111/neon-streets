@@ -7,7 +7,8 @@ const smooth = (a,b,x) => { const t=clamp01((x-a)/(b-a)); return t*t*(3-2*t); };
 export class EnvironmentSystem {
   constructor(scene,camera,hemi,sun) {
     this.scene=scene;this.camera=camera;this.hemi=hemi;this.sun=sun;
-    this.time=Number(localStorage.getItem('ns_world_time') ?? 17);
+    const savedTime=Number(localStorage.getItem('ns_world_time') ?? 17);
+    this.time=Number.isFinite(savedTime)?THREE.MathUtils.clamp(savedTime,0,23.75):17;
     this.weather=localStorage.getItem('ns_world_weather') || 'clear';
     if(!WEATHER.includes(this.weather))this.weather='clear';
     this.rainCount=420;this.snowCount=260;
@@ -54,7 +55,7 @@ export class EnvironmentSystem {
   }
   update(dt,center){
     if(this.weather==='rain'){
-      for(let i=0;i<this.rainCount;i++){const n=i*6;this.rainPositions[n]+=dt*.7;this.rainPositions[n+1]-=dt*19;this.rainPositions[n+2]+=(center?.z||0)*0;if(this.rainPositions[n+1]<0)this.resetRain(i);}
+      for(let i=0;i<this.rainCount;i++){const n=i*6;this.rainPositions[n]+=dt*.7;this.rainPositions[n+1]-=dt*19;if(this.rainPositions[n+1]<0)this.resetRain(i);}
       this.rain.position.set(center?.x||0,0,center?.z||0);this.rain.geometry.attributes.position.needsUpdate=true;
     }else if(this.weather==='snow'){
       for(let i=0;i<this.snowCount;i++){const n=i*3;this.snowPositions[n]+=Math.sin(performance.now()*.0005+i)*dt*.22;this.snowPositions[n+1]-=dt*(.7+(i%7)*.12);if(this.snowPositions[n+1]<0)this.resetSnow(i);}
