@@ -15,6 +15,8 @@ const yieldToUI = () => new Promise(resolve => {
 // Reuse immutable materials and box geometries: the city contains thousands of facade details.
 const materialCache = new Map();
 const geometryCache = new Map();
+// Boxes are collected and emitted as InstancedMesh batches to avoid thousands of draw calls.
+const batchesByGroup = new WeakMap();
 const mat = (color, roughness = .8, metalness = 0) => {
   const key = [color, roughness, metalness].join('|');
   if (!materialCache.has(key)) materialCache.set(key, new THREE.MeshStandardMaterial({ color, roughness, metalness }));
@@ -25,11 +27,32 @@ const glowMat = (color, roughness, metalness, emissive, intensity) => {
   if (!materialCache.has(key)) materialCache.set(key, new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive, emissiveIntensity: intensity }));
   return materialCache.get(key);
 };
-function box(w, h, d, material, x, y, z, group, castsShadow = false) {
+function box(w, h, d, material, x, y, z, group) {
   const key = [w, h, d].join('|');
   if (!geometryCache.has(key)) geometryCache.set(key, new THREE.BoxGeometry(w, h, d));
-  const m = new THREE.Mesh(geometryCache.get(key), material);
-  m.position.set(x, y, z); m.castShadow = castsShadow; m.receiveShadow = castsShadow; group.add(m); return m;
+  let batches = batchesByGroup.get(group);
+  if (!batches) { batches = new Map(); batchesByGroup.set(group, batches); }
+  const geometry = geometryCache.get(key);
+  const batchKey = geometry.uuid + '|' + material.uuid;
+  let batch = batches.get(batchKey);
+  if (!batch) { batch = { geometry, material, matrices: [] }; batches.set(batchKey, batch); }
+  const transform = new THREE.Object3D();
+  transform.position.set(x, y, z);
+  transform.updateMatrix();
+  batch.matrices.push(transform.matrix.clone());
+}
+function flushBoxBatches(group) {
+  const batches = batchesByGroup.get(group);
+  if (!batches) return;
+  for (const { geometry, material, matrices } of batches.values()) {
+    const mesh = new THREE.InstancedMesh(geometry, material, matrices.length);
+    for (let i = 0; i < matrices.length; i++) mesh.setMatrixAt(i, matrices[i]);
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    group.add(mesh);
+  }
+  batches.clear();
 }
 function makeBuilding(group,x,z,w,d,h,color,seed){
   const wall=mat(color,.78,.18),dark=mat('#101a25',.42,.72),trim=mat('#34485a',.34,.8);
@@ -150,8 +173,9 @@ export async function createWorld(onProgress = () => {}) {
   composer.addPass(new RenderPass(scene,camera));
   composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.58,.7,.8));
   composer.addPass(new OutputPass());
-  onProgress(94, '正在完成渲染管线与画面质量设置…');
+  onProgress(94, '正在合并街区模型并优化绘制批次…');
   await yieldToUI();
+  flushBoxBatches(city);
   return {
     scene, camera, renderer, composer, city,
     resize() {
