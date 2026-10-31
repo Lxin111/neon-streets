@@ -20,8 +20,8 @@ jobs:
         run: |
           curl --fail --location --retry 2 --silent --show-error https://renderpeople.com/free-3d-people/ -o /tmp/renderpeople.html
           echo "Official Renderpeople sample download candidates:"
-          grep -Eo 'https?[^" ]+(rigged|animated)[^" ]+\\.(zip|glb|fbx)' /tmp/renderpeople.html | head -20 || true
-          grep -Eo 'rp_[A-Za-z0-9_]+_(FBX|GLB)\\.zip' /tmp/renderpeople.html | sort -u | head -20 || true
+          grep -Eo 'https?[^" ]+(rigged|animated)[^" ]+\.(zip|glb|fbx)' /tmp/renderpeople.html | head -20 || true
+          grep -Eo 'rp_[A-Za-z0-9_]+_(FBX|GLB)\.zip' /tmp/renderpeople.html | sort -u | head -20 || true
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
