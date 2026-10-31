@@ -70,7 +70,6 @@ for image in bpy.data.images:
 for obj in bpy.context.scene.objects:
     if obj.type == "MESH":
         obj.select_set(True)
-        obj.data.use_auto_smooth = False
         obj["renderpeople_scan_asset"] = True
     else:
         obj.select_set(False)
