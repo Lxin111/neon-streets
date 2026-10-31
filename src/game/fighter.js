@@ -284,6 +284,7 @@ export class FighterGame{
   }
  }
  bind(){
+  window.addEventListener('pointerdown',()=>this.audio.unlock(),{once:true,passive:true});
   window.addEventListener('keydown',e=>{if(e.code==='AltLeft'||e.code==='AltRight'){document.exitPointerLock?.();this.keys={};this.setBlock(false);return;}this.keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.repeat)return;if(e.code==='Space')this.dodge();if(e.code==='KeyJ'||e.code==='Enter')this.attack();if(e.code==='KeyL')this.iaido();if(e.code==='KeyK')this.setBlock(true);if(e.code==='KeyE')this.pickupChest();if(e.code==='KeyR')this.ultimate();if(e.code==='KeyC')this.onStatsToggle?.();if(e.code==='Digit1')this.switchWeapon('solar');if(e.code==='Digit2')this.switchWeapon('demon');if(e.code==='Digit3')this.switchWeapon('ak');if(e.code==='Digit4')this.switchWeapon('katana');});
   window.addEventListener('keyup',e=>{this.keys[e.code]=false;if(e.code==='KeyK')this.setBlock(false);});
   document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement!==canvas)clearMovementKeys();});
