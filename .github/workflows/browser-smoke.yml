@@ -1,0 +1,36 @@
+name: Browser smoke tests
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install project dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build production game
+        run: npm run build
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save playwright --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Run desktop and mobile browser checks
+        run: node scripts/browser-smoke.mjs
+      - name: Upload screenshots and test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neon-streets-browser-test-${{ github.run_number }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 14
