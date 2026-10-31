@@ -1,41 +1,13 @@
 <!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#080d14" />
-  <meta name="description" content="NEON STREETS — a browser-based open-world street fighting prototype." />
-  <title>NEON STREETS | 霓虹街区</title>
-</head>
-<body>
-  <div id="app">
-    <div id="loading"><div class="loader-mark">NS</div><div>正在进入霓虹街区…</div><small>首次加载可能需要一点时间</small></div>
-    <div id="hud" class="hidden">
-      <header class="topbar">
-        <div class="brand"><span class="brand-mark">NS</span><span>NEON <b>STREETS</b></span></div>
-        <div class="district">DISTRICT 01 <span>·</span> OLD TOWN</div>
-        <button id="pauseBtn" class="icon-btn" aria-label="暂停">Ⅱ</button>
-      </header>
-      <section class="player-panel">
-        <div class="player-name">街区浪人 <small>LV. 01</small></div>
-        <div class="bar-label"><span>生命值</span><span id="hpText">100 / 100</span></div>
-        <div class="bar"><i id="hpBar"></i></div>
-        <div class="bar-label xp-label"><span>经验</span><span id="xpText">0 / 100</span></div>
-        <div class="bar xp"><i id="xpBar"></i></div>
-      </section>
-      <section class="mission"><small>当前目标 / OBJECTIVE</small><strong id="objective">清理街区中的敌对人员</strong><span id="enemyCount">剩余敌人：5</span></section>
-      <div id="hint" class="hint">WASD 移动 · 鼠标调整视角 · 点击攻击 · 空格闪避</div>
-      <div id="crosshair">＋</div>
-      <div id="toast" class="toast"></div>
-      <div id="pauseOverlay" class="overlay hidden"><div class="menu-card"><div class="eyebrow">NEON STREETS</div><h1>暂停</h1><p>街区暂时安静了下来。</p><button id="resumeBtn" class="primary">继续游戏</button><button id="restartBtn" class="secondary">重新开始</button></div></div>
-      <div id="gameOverOverlay" class="overlay hidden"><div class="menu-card"><div class="eyebrow">END OF THE FIGHT</div><h1>你被击倒了</h1><p>调整战术，再次挑战这片街区。</p><button id="retryBtn" class="primary">重新挑战</button></div></div>
-      <div id="winOverlay" class="overlay hidden"><div class="menu-card"><div class="eyebrow">DISTRICT CLEARED</div><h1>街区已清理</h1><p>第一片街区暂时恢复了平静。</p><button id="againBtn" class="primary">再战一次</button></div></div>
-      <div class="mobile-controls">
-        <div id="stick" class="stick"><div id="stickKnob"></div></div>
-        <div class="mobile-actions"><button data-action="dodge">闪避</button><button data-action="block">格挡</button><button data-action="attack" class="attack">攻击</button></div>
-      </div>
-    </div>
-  </div>
-  <script type="module" src="/src/main.js"></script>
-</body>
-</html>
+<html lang="zh-CN"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/><meta name="theme-color" content="#080d14"/><meta name="description" content="NEON STREETS — browser-based katana street combat."/><title>NEON STREETS | 霓虹街区</title></head>
+<body><div id="app">
+<div id="loading"><div class="loader-mark">NS</div><div>正在进入霓虹街区…</div><small>首次加载可能需要一点时间</small></div>
+<div id="hud" class="hidden"><header class="topbar"><div class="brand"><span class="brand-mark">NS</span><span>NEON <b>STREETS</b></span></div><div class="district">DISTRICT 01 <span>·</span> OLD TOWN</div><button id="pauseBtn" class="icon-btn" aria-label="暂停">Ⅱ</button></header>
+<section class="player-panel"><div class="player-name">赤影·太刀侠 <small>LV. 01</small></div><div class="bar-label"><span>生命值</span><span id="hpText">100 / 100</span></div><div class="bar"><i id="hpBar"></i></div><div class="bar-label xp-label"><span>经验</span><span id="xpText">0 / 100</span></div><div class="bar xp"><i id="xpBar"></i></div><div id="buffStatus" class="buff-status">当前强化：无</div></section>
+<section class="mission"><small>当前目标 / OBJECTIVE</small><strong id="objective">击败街区中的敌对人员</strong><span id="enemyCount">剩余敌人：7</span></section>
+<div id="hint" class="hint">WASD 移动 · 鼠标调整视角 · 左键斩击 · 右键居合 · K 格挡弹反</div><div id="crosshair">＋</div><div id="toast" class="toast"></div>
+<div id="pauseOverlay" class="overlay hidden"><div class="menu-card"><div class="eyebrow">NEON STREETS</div><h1>暂停</h1><p>街区暂时安静了下来。</p><button id="resumeBtn" class="primary">继续游戏</button><button id="restartBtn" class="secondary">重新开始</button></div></div>
+<div id="gameOverOverlay" class="overlay hidden"><div class="menu-card"><div class="eyebrow">END OF THE FIGHT</div><h1>你被击倒了</h1><p>调整战术，再次挑战这片街区。</p><button id="retryBtn" class="primary">重新挑战</button></div></div>
+<div id="winOverlay" class="overlay hidden"><div class="menu-card"><div class="eyebrow">DISTRICT CLEARED</div><h1>街区已清理</h1><p>第一片街区暂时恢复了平静。</p><button id="againBtn" class="primary">再战一次</button></div></div>
+<div class="mobile-controls"><div id="stick" class="stick"><div id="stickKnob"></div></div><div class="mobile-actions"><button data-action="dodge">闪避</button><button data-action="block">格挡/弹反</button><button data-action="iaido">居合</button><button data-action="attack" class="attack">斩击</button></div></div>
+</div><script type="module" src="/src/main.js"></script></body></html>
