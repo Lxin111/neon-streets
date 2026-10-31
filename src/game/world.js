@@ -9,33 +9,39 @@ function box(w, h, d, material, x, y, z, group) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
   m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; group.add(m); return m;
 }
-function makeBuilding(group, x, z, w, d, h, color, seed) {
-  const wall = mat(color, .92), dark = mat('#17232b'), glass = mat('#243e4b', .28, .45), trim = mat('#3b4548');
-  box(w, h, d, wall, x, h / 2, z, group);
-  box(w + .12, .18, d + .12, trim, x, h, z, group);
-  const floors = Math.max(2, Math.floor(h / 2.5));
-  for (let f = 0; f < floors; f++) {
-    const y = 1.05 + f * 2.25;
-    if (y > h - .6) continue;
-    for (let i = 0; i < Math.max(2, Math.floor(w / 1.8)); i++) {
-      const wx = x - w / 2 + .9 + i * 1.8;
-      box(.78, 1.05, .07, glass, wx, y, z + d / 2 + .045, group);
-      box(.82, .09, .09, dark, wx, y - .58, z + d / 2 + .07, group);
+function makeBuilding(group,x,z,w,d,h,color,seed){
+  const wall=mat(color,.78,.18),dark=mat('#101a25',.42,.72),trim=mat('#34485a',.34,.8);
+  const neonColors=['#12dfff','#ff3f9b','#a66bff','#ffb84d'],neon=neonColors[seed%neonColors.length];
+  box(w,h,d,wall,x,h/2,z,group);box(w+.24,.22,d+.24,trim,x,h,z,group);box(w+.12,.12,d+.12,dark,x,.18,z,group);
+  const floors=Math.max(2,Math.floor(h/2.45));
+  for(let floor=0;floor<floors;floor++){
+    const y=1.05+floor*2.25;if(y>h-.6)continue;
+    box(w+.08,.075,d+.08,trim,x,y+.68,z,group);
+    const count=Math.max(2,Math.floor(w/1.55));
+    for(let i=0;i<count;i++){
+      const wx=x-w/2+.78+i*1.55,lit=((seed*13+floor*7+i*3)%9)<6;
+      const pane=mat(lit?'#1b3c50':'#101a27',.16,.65);
+      if(lit){pane.emissive=new THREE.Color((i+floor)%4===0?'#ff8b45':neon);pane.emissiveIntensity=.45+((i+seed)%3)*.16;}
+      box(.72,1.12,.075,pane,wx,y,z+d/2+.055,group);
+      box(.78,.07,.1,dark,wx,y-.6,z+d/2+.09,group);
+      if(i%2===0)box(.035,1.16,.085,trim,wx+.39,y,z+d/2+.1,group);
     }
+    if(floor%2===0){const strip=box(w*.82,.035,.1,mat('#162c3b',.3,.65),x,y+.78,z+d/2+.12,group);strip.material.emissive=new THREE.Color(neon);strip.material.emissiveIntensity=.8;}
   }
-  box(w * .72, .55, .12, dark, x, h * .68, z + d / 2 + .09, group);
-  if (seed % 2 === 0) {
-    const sign = box(w * .55, .34, .14, mat('#c38b4a', .45), x, h * .68, z + d / 2 + .18, group);
-    sign.material.emissive = new THREE.Color('#5a2d12'); sign.material.emissiveIntensity = .45;
-  }
+  for(const side of [-1,1])box(.16,h*.82,.22,trim,x+side*(w/2-.12),h*.43,z+d/2+.12,group);
+  box(w*.74,.52,.16,dark,x,h*.7,z+d/2+.16,group);
+  const sign=box(w*.64,.29,.19,mat('#182b3b',.25,.5),x,h*.7,z+d/2+.27,group);
+  sign.material.emissive=new THREE.Color(neon);sign.material.emissiveIntensity=1.35;
+  for(let k=0;k<3;k++)box(.38,.55,.42,trim,x-w*.25+k*w*.25,h+.28,z,group);
+  const roofLine=box(w+.18,.055,.14,mat('#182d3d',.25,.7),x,h+.13,z+d/2);
+  roofLine.material.emissive=new THREE.Color(neon);roofLine.material.emissiveIntensity=.9;
 }
-function makeStreetLamp(group, x, z) {
-  const metal = mat('#303b40', .42, .7);
-  const glow = new THREE.MeshStandardMaterial({ color: '#f6dba0', emissive: '#f6c56d', emissiveIntensity: 2 });
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(.055, .075, 4.3, 8), metal);
-  pole.position.set(x, 2.15, z); pole.castShadow = true; group.add(pole);
-  box(.9, .08, .08, metal, x + .38, 4.18, z, group);
-  box(.32, .12, .24, glow, x + .72, 4.08, z, group);
+function makeStreetLamp(group,x,z){
+  const metal=mat('#182a35',.32,.85),glow=new THREE.MeshStandardMaterial({color:'#b9f7ff',emissive:'#27dfff',emissiveIntensity:3.2});
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.055,.085,4.6,10),metal);
+  pole.position.set(x,2.3,z);pole.castShadow=true;group.add(pole);
+  box(.95,.09,.1,metal,x+.38,4.42,z,group);box(.42,.14,.3,glow,x+.76,4.3,z,group);
+  const light=new THREE.PointLight('#42dfff',15,12,2);light.position.set(x+.76,4.05,z);group.add(light);
 }
 export function createWorld() {
   const scene = new THREE.Scene();
