@@ -1,4 +1,8 @@
 import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 const mat = (color, roughness = .8, metalness = 0) => new THREE.MeshStandardMaterial({ color, roughness, metalness });
 function box(w, h, d, material, x, y, z, group) {
@@ -35,25 +39,34 @@ function makeStreetLamp(group, x, z) {
 }
 export function createWorld() {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#9aaeb5');
-  scene.fog = new THREE.FogExp2('#9aaeb5', .0085);
+  scene.background = new THREE.Color('#07111f');
+  scene.fog = new THREE.FogExp2('#101d31', .009);
   const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, .1, 240);
   camera.position.set(0, 5, 9);
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.8));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, matchMedia('(pointer: coarse)').matches ? 1.35 : 2));
+  renderer.outputColorSpace=THREE.SRGBColorSpace;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.12;
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
-  scene.add(new THREE.HemisphereLight('#dce8ef', '#3d4543', 2.0));
-  const sun = new THREE.DirectionalLight('#ffe2bd', 3.0);
+  scene.add(new THREE.HemisphereLight('#8cb8d8','#101522',.72));
+  scene.add(new THREE.AmbientLight('#243a60',.28));
+  const sun = new THREE.DirectionalLight('#8dbdff',1.65);
   sun.position.set(-24, 38, 18); sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(3072,3072);
+  sun.shadow.camera.near=1;sun.shadow.camera.far=150;
+  sun.shadow.normalBias=.035;
   sun.shadow.camera.left = -48; sun.shadow.camera.right = 48;
   sun.shadow.camera.top = 48; sun.shadow.camera.bottom = -48;
   sun.shadow.bias = -.00025; scene.add(sun);
   const city = new THREE.Group(); scene.add(city);
+  const cyanLight=new THREE.PointLight('#12cfff',38,42,2);cyanLight.position.set(-7,5,-9);city.add(cyanLight);
+  const pinkLight=new THREE.PointLight('#ff319c',34,38,2);pinkLight.position.set(8,5,8);city.add(pinkLight);
+  const violetLight=new THREE.PointLight('#9a58ff',30,34,2);violetLight.position.set(-10,4,12);city.add(violetLight);
   const asphalt = mat('#343a3d'), sidewalk = mat('#777b77'), lane = mat('#c2bda8');
   box(120, .35, 120, asphalt, 0, -.2, 0, city);
   box(18, .16, 110, asphalt, 0, -.015, 0, city); box(110, .16, 18, asphalt, 0, -.01, 0, city);
@@ -95,11 +108,15 @@ export function createWorld() {
   }
   const groundGrid = new THREE.GridHelper(120, 60, '#687579', '#687579');
   groundGrid.position.y = -.01; groundGrid.material.opacity = .12; groundGrid.material.transparent = true; scene.add(groundGrid);
+  const composer=new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene,camera));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.58,.7,.8));
+  composer.addPass(new OutputPass());
   return {
-    scene, camera, renderer, city,
+    scene, camera, renderer, composer, city,
     resize() {
       camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
-      renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio, matchMedia('(pointer: coarse)').matches ? 1.25 : 1.8));
+      renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,matchMedia('(pointer: coarse)').matches?1.2:2));composer.setSize(innerWidth,innerHeight);
     }
   };
 }
