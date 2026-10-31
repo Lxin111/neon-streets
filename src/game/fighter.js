@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
-const readSaved=(key,fallback)=>{try{const value=localStorage.getItem(key);return value===null?fallback:JSON.parse(value);}catch(error){console.warn('存档读取失败，使用默认值：'+key,error);return fallback;}};
+const readSaved=(key,fallback)=>{try{const value=localStorage.getItem(key);if(value===null)return fallback;const parsed=JSON.parse(value);if(Array.isArray(fallback)&&!Array.isArray(parsed)){console.warn('存档格式异常，使用默认值：'+key);return fallback;}if(fallback&&typeof fallback==='object'&&!Array.isArray(fallback)&&(parsed===null||typeof parsed!=='object'||Array.isArray(parsed))){console.warn('存档格式异常，使用默认值：'+key);return fallback;}return parsed;}catch(error){console.warn('存档读取失败，使用默认值：'+key,error);return fallback;}};
 const mat=(color,roughness=.55,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
 function mesh(g,geo,material,pos,rot){const m=new THREE.Mesh(geo,material);m.position.set(...pos);if(rot)m.rotation.set(...rot);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}
 function capsule(g,r,len,material,pos){return mesh(g,new THREE.CapsuleGeometry(r,len,5,10),material,pos);}
@@ -100,15 +100,23 @@ export class FighterGame{
  spawnWave(n){const alive=this.enemies.filter(e=>!e.dead).length;for(let i=0;i<n;i++){const idx=this.enemies.length,model=makeFighter(this.scene,true,idx),a=(idx%7-3)*.32,r=12+(Math.floor(idx/7)%2)*3;model.root.position.set(this.player.root.position.x+Math.sin(a)*r,0,this.player.root.position.z-Math.cos(a)*r);model.root.rotation.y=Math.atan2(-model.root.position.x,-model.root.position.z);const cycle=Math.floor((this.districtNumber-1)/6),scale=1+cycle*.22,hp=(idx%5===4?80:65)*scale;const enemy={model,hp,maxHp:hp,attack:(1+Math.random())*(1+cycle*.12),damage:8*(1+cycle*.12),stun:0,dead:false,seed:idx,ranged:idx%5===4};this.enemies.push(enemy);if(this.realisticAsset)this.attachRealisticModel(enemy);}}
  loadRealisticEnemyModel(onProgress=()=>{}){
   const url=`${import.meta.env.BASE_URL}models/nathan-photogrammetry.glb`;
-  return new Promise(resolve=>new GLTFLoader().load(url,async gltf=>{
-   this.realisticAsset=gltf;this.realisticAssetKind='renderpeople-scan';
-   const enemies=this.enemies.slice();
-   for(let i=0;i<enemies.length;i++){
-    this.attachRealisticModel(enemies[i]);
-    if(i%2===1){onProgress((i+1)/Math.max(1,enemies.length));await new Promise(done=>requestAnimationFrame(()=>done()));}
-   }
-   resolve(true);
-  },event=>{if(event.lengthComputable)onProgress(event.loaded/event.total);},error=>{this.realisticAssetError=error;console.warn('真人扫描模型加载失败，继续使用基础角色。',error);resolve(false);}));
+  return new Promise(resolve=>{
+   let settled=false;const finish=value=>{if(settled)return;settled=true;resolve(value);};
+   try{
+    new GLTFLoader().load(url,gltf=>{
+     try{
+      this.realisticAsset=gltf;this.realisticAssetKind='renderpeople-scan';
+      const enemies=this.enemies.slice();
+      for(let i=0;i<enemies.length;i++){
+       try{this.attachRealisticModel(enemies[i]);}
+       catch(error){console.warn('真人扫描角色应用失败，保留基础模型。',error);this.realisticAssetError=error;}
+       if(i%2===1){onProgress((i+1)/Math.max(1,enemies.length));}
+      }
+      finish(true);
+     }catch(error){this.realisticAssetError=error;console.warn('真人扫描模型处理失败，使用基础角色。',error);finish(false);}
+    },event=>{if(event.lengthComputable)onProgress(event.loaded/event.total);},error=>{this.realisticAssetError=error;console.warn('真人扫描模型加载失败，继续使用基础角色。',error);finish(false);});
+   }catch(error){this.realisticAssetError=error;console.warn('真人扫描模型初始化失败，继续使用基础角色。',error);finish(false);}
+  });
  }
  attachRealisticModel(enemy){
   if(!this.realisticAsset||enemy.model.visualRoot)return;
