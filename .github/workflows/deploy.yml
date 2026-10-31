@@ -46,7 +46,7 @@ jobs:
           os.makedirs(target, exist_ok=True)
           with zipfile.ZipFile(source) as archive:
               for item in archive.infolist():
-                  name = item.filename.replace("\\\\", "/")
+                  name = item.filename.replace("\\", "/")
                   base = os.path.basename(name)
                   if not base or not base.lower().endswith((".fbx", ".jpg", ".png")):
                       continue
