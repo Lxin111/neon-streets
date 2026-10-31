@@ -38,7 +38,7 @@ game.onToast = message => {
 document.querySelector('#pauseBtn').addEventListener('click', () => game.pause());
 document.querySelector('#resumeBtn').addEventListener('click', () => game.resume());
 document.querySelector('#restartBtn').addEventListener('click', () => location.reload());
-document.querySelector('#againBtn').addEventListener('click', () => location.reload());
+document.querySelector('#againBtn').addEventListener('click', () => location.reload());\ndocument.querySelector('#retryBtn').addEventListener('click', () => location.reload());
 
 const actions = { attack: () => game.attack(), dodge: () => game.dodge(), block: () => game.setBlock(true) };
 document.querySelectorAll('[data-action]').forEach(btn => {
