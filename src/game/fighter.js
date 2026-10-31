@@ -120,8 +120,14 @@ export class FighterGame{
  }
  attachRealisticModel(enemy){
   if(!this.realisticAsset||enemy.model.visualRoot)return;
-  const rig=enemy.model,visual=cloneSkeleton(this.realisticAsset.scene),box=new THREE.Box3().setFromObject(visual),height=Math.max(.01,box.max.y-box.min.y);
-  visual.scale.setScalar(1);const scaledBox=new THREE.Box3().setFromObject(visual);visual.position.y-=scaledBox.min.y;
+  const rig=enemy.model,visual=cloneSkeleton(this.realisticAsset.scene);
+  // Normalize only after resetting the cloned scene root scale. The old code
+  // measured height before this reset, which could produce an enormous scale
+  // (or a nearly invisible model) when the GLB root carried a non-unit scale.
+  visual.scale.set(1,1,1);visual.updateMatrixWorld(true);
+  const box=new THREE.Box3().setFromObject(visual),size=box.getSize(new THREE.Vector3()),height=size.y;
+  if(!Number.isFinite(height)||height<0.25||height>20)throw new Error('真人扫描模型尺寸异常：'+height);
+  visual.position.x-=(box.min.x+box.max.x)*.5;visual.position.y-=box.min.y;visual.position.z-=(box.min.z+box.max.z)*.5;
   const group=new THREE.Group();group.rotation.y=Math.PI;group.add(visual);group.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
   const armorMat=mat(['#1b2832','#25252d','#26343b','#34252d'][enemy.seed%4],.3,.78),edgeMat=mat('#8799a8',.24,.82),glowMat=new THREE.MeshStandardMaterial({color:'#6ff4ff',metalness:.35,roughness:.2,emissive:'#10cfff',emissiveIntensity:1.25});
   mesh(group,new THREE.BoxGeometry(.57,.38,.16),armorMat,[0,1.34,-.31]);mesh(group,new THREE.BoxGeometry(.46,.055,.18),edgeMat,[0,1.55,-.33]);mesh(group,new THREE.OctahedronGeometry(.075,1),glowMat,[0,1.34,-.41]);mesh(group,new THREE.BoxGeometry(.34,.42,.2),armorMat,[0,1.42,.24]);
