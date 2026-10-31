@@ -168,6 +168,7 @@ export async function createWorld(onProgress = () => {}) {
   for (let i = 0; i < 22; i++) {
     const a = i / 22 * Math.PI * 2, r = 65 + (i % 4) * 5, h = 16 + (i * 7 % 22);
     box(7, h, 7, mat('#65777a'), Math.sin(a) * r, h / 2, Math.cos(a) * r, city);
+    buildingColliders.push({ type: 'box', minX: Math.sin(a) * r - 3.5, maxX: Math.sin(a) * r + 3.5, minZ: Math.cos(a) * r - 3.5, maxZ: Math.cos(a) * r + 3.5 });
   }
   onProgress(78, '正在布置街灯、树木与街道设施…');
   await yieldToUI();
