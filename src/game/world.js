@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {EnvironmentSystem} from './environment.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -103,7 +104,7 @@ export async function createWorld(onProgress = () => {}) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
-  scene.add(new THREE.HemisphereLight('#8cb8d8','#101522',.72));
+  const hemisphere = new THREE.HemisphereLight('#8cb8d8','#101522',.72);scene.add(hemisphere);
   scene.add(new THREE.AmbientLight('#243a60',.28));
   const sun = new THREE.DirectionalLight('#8dbdff',1.65);
   sun.position.set(-24, 38, 18); sun.castShadow = true;
@@ -183,8 +184,9 @@ export async function createWorld(onProgress = () => {}) {
   onProgress(94, '正在合并街区模型并优化绘制批次…');
   await yieldToUI();
   flushBoxBatches(city);
+  const environment = new EnvironmentSystem(scene,camera,hemisphere,sun);
   return {
-    scene, camera, renderer, composer, city, buildingColliders,
+    scene, camera, renderer, composer, city, buildingColliders, environment,
     resize() {
       camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
       renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,matchMedia('(pointer: coarse)').matches?1.2:2));composer.setSize(innerWidth,innerHeight);
