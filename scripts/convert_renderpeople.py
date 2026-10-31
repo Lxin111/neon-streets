@@ -22,7 +22,23 @@ else:
         use_custom_normals=True,
     )
 
-# Rebuild the imported scan material as a compact PBR material.
+# Load the supplied 8K scan maps explicitly; FBX paths can contain Windows separators.
+texture_dir = os.path.join(os.path.dirname(fbx_path), "tex")
+for filename in os.listdir(texture_dir):
+    if filename.lower().endswith((".jpg", ".jpeg", ".png")):
+        bpy.data.images.load(os.path.join(texture_dir, filename), check_existing=True)
+images = list(bpy.data.images)
+print("RENDERPEOPLE_IMAGE_COUNT:", len(images))
+for image in images:
+    print("RENDERPEOPLE_IMAGE:", image.name, tuple(image.size), image.filepath)
+diffuse = next((i for i in images if "dif" in i.name.lower() or "diffuse" in i.name.lower()), None)
+normal = next((i for i in images if "norm" in i.name.lower()), None)
+gloss = next((i for i in images if "gloss" in i.name.lower()), None)
+
+# Rebuild the scanned materials as browser-friendly PBR nodes.
+for obj in bpy.data.objects:
+    if obj.type == "MESH" and not obj.data.materials:
+        obj.data.materials.append(bpy.data.materials.new("Renderpeople Scan PBR"))
 for material in bpy.data.materials:
     material.use_nodes = True
     nodes = material.node_tree.nodes
@@ -34,12 +50,6 @@ for material in bpy.data.materials:
         if output is None:
             output = nodes.new("ShaderNodeOutputMaterial")
         links.new(bsdf.outputs["BSDF"], output.inputs["Surface"])
-
-    images = list(bpy.data.images)
-    diffuse = next((i for i in images if "dif" in i.name.lower() or "diffuse" in i.name.lower()), None)
-    normal = next((i for i in images if "norm" in i.name.lower()), None)
-    gloss = next((i for i in images if "gloss" in i.name.lower()), None)
-
     if diffuse:
         diffuse.colorspace_settings.name = "sRGB"
         tex = nodes.new("ShaderNodeTexImage")
