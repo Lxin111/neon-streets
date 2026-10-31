@@ -34,6 +34,27 @@ jobs:
           unzip -p /tmp/renderpeople-animated.zip rp_nathan_animated_003_walking_FBX.zip > /tmp/renderpeople-nathan.zip
           echo "Nathan scanned model package contents:"
           unzip -l /tmp/renderpeople-nathan.zip | head -80
+      - name: Convert scanned Renderpeople character to GLB
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          mkdir -p /tmp/renderpeople-nathan public/models
+          python3 - <<'PY'
+          import os, zipfile
+          source = "/tmp/renderpeople-nathan.zip"
+          target = "/tmp/renderpeople-nathan"
+          os.makedirs(target, exist_ok=True)
+          with zipfile.ZipFile(source) as archive:
+              for item in archive.infolist():
+                  name = item.filename.replace("\\\\", "/")
+                  base = os.path.basename(name)
+                  if not base or not base.lower().endswith((".fbx", ".jpg", ".png")):
+                      continue
+                  with archive.open(item) as src, open(os.path.join(target, base), "wb") as dst:
+                      dst.write(src.read())
+          PY
+          blender --background --python scripts/convert_renderpeople.py -- /tmp/renderpeople-nathan/rp_nathan_animated_003_walking.fbx public/models/nathan-photogrammetry.glb
+          test "$(stat -c%s public/models/nathan-photogrammetry.glb)" -gt 10000000
       - name: Download CC0 rigged human character
         run: |
           mkdir -p public/models
