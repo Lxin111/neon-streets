@@ -82,11 +82,11 @@ export class FighterGame{
   if(!this.realisticAsset||enemy.model.visualRoot)return;
   const rig=enemy.model,visual=cloneSkeleton(this.realisticAsset.scene),box=new THREE.Box3().setFromObject(visual),height=Math.max(.01,box.max.y-box.min.y);
   visual.scale.setScalar(1);const scaledBox=new THREE.Box3().setFromObject(visual);visual.position.y-=scaledBox.min.y;
-  const group=new THREE.Group();group.rotation.y=Math.PI;group.add(visual);group.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+  const group=new THREE.Group();group.rotation.y=Math.PI;group.add(visual);const suitTints=['#9babb9','#a58a72','#8c779e','#6e9389'];group.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(/suit|shirt|jacket|trouser|pants/i.test(o.name)){o.material=Array.isArray(o.material)?o.material.map(m=>m.clone()):o.material.clone();const mats=Array.isArray(o.material)?o.material:[o.material];for(const material of mats)if(material.color)material.color.multiply(new THREE.Color(suitTints[enemy.seed%4]));}}});
   const armorMat=mat(['#1b2832','#25252d','#26343b','#34252d'][enemy.seed%4],.3,.78),edgeMat=mat('#8799a8',.24,.82),glowMat=new THREE.MeshStandardMaterial({color:'#6ff4ff',metalness:.35,roughness:.2,emissive:'#10cfff',emissiveIntensity:1.25});
-  mesh(group,new THREE.BoxGeometry(.57,.38,.16),armorMat,[0,1.34,-.17]);mesh(group,new THREE.BoxGeometry(.46,.055,.18),edgeMat,[0,1.55,-.19]);mesh(group,new THREE.OctahedronGeometry(.075,1),glowMat,[0,1.34,-.27]);
+  mesh(group,new THREE.BoxGeometry(.57,.38,.16),armorMat,[0,1.34,-.31]);mesh(group,new THREE.BoxGeometry(.46,.055,.18),edgeMat,[0,1.55,-.33]);mesh(group,new THREE.OctahedronGeometry(.075,1),glowMat,[0,1.34,-.41]);mesh(group,new THREE.BoxGeometry(.34,.42,.2),armorMat,[0,1.42,.24]);
   group.scale.setScalar(2.05/height);
-  for(const side of [-1,1]){const shoulder=mesh(group,new THREE.SphereGeometry(.16,12,10),armorMat,[side*.36,1.56,-.07]);shoulder.scale.set(1.15,.78,1);mesh(group,new THREE.BoxGeometry(.13,.3,.13),edgeMat,[side*.42,1.17,-.08],[0,0,side*.08]);mesh(group,new THREE.BoxGeometry(.24,.14,.22),armorMat,[side*.16,.57,-.1]);}
+  for(const side of [-1,1]){const shoulder=mesh(group,new THREE.SphereGeometry(.16,12,10),armorMat,[side*.36,1.56,-.2]);shoulder.scale.set(1.15,.78,1);mesh(group,new THREE.BoxGeometry(.13,.3,.13),edgeMat,[side*.42,1.17,-.18],[0,0,side*.08]);mesh(group,new THREE.BoxGeometry(.24,.14,.22),armorMat,[side*.16,.57,-.2]);}
   rig.root.traverse(o=>{if(o.isMesh)o.visible=false;});rig.root.add(group);rig.visualRoot=group;
   rig.mixer=new THREE.AnimationMixer(group);rig.actions={};
   rig.bones={upperarmR:group.getObjectByName('upperarm_r'),lowerarmR:group.getObjectByName('lowerarm_r'),upperarmL:group.getObjectByName('upperarm_l'),lowerarmL:group.getObjectByName('lowerarm_l')};
