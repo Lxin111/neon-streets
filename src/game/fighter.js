@@ -71,12 +71,37 @@ export class FighterGame{
   this.enemies=[];this.realisticAsset=null;this.realisticAssetError=null;this.bullets=[];this.waves=[];this.particles=[];
   this.keys={};this.mobile={x:0,y:0};this.hp=100;this.xp=0;this.block=false;this.attackTime=0;this.iaidoTime=0;this.dodgeTime=0;this.invuln=0;this.combo=0;this.comboWindow=0;this.parryWindow=0;this.buff=null;this.buffTime=0;
   this.swordCharge=0;this.swordColor='#e7edf2';this.swordId='starter';this.gold=Number(localStorage.getItem('ns_gold')||0);this.kills=Number(localStorage.getItem('ns_kills')||0);this.achievements=JSON.parse(localStorage.getItem('ns_achievements')||'[]');this.achievementRecords=JSON.parse(localStorage.getItem('ns_achievement_records')||'[]');this.bestCombo=Number(localStorage.getItem('ns_best_combo')||0);this.ownedSwords=JSON.parse(localStorage.getItem('ns_owned_swords')||'[]');this.weaponOwned=JSON.parse(localStorage.getItem('ns_weapon_owned')||'{"solar":false,"demon":false,"ak":false}');this.activeWeapon='katana';this.weaponVisual=null;this.districtProgress=0;this.lastDistrictMark=0;this.bossActive=false;this.bossCount=0;this.timeStop=0;this.chest=null;this.onWeaponChest=null;this.onStatsToggle=null;this.onWeaponChange=null;const savedSword=localStorage.getItem('ns_sword');if(savedSword&&this.ownedSwords.includes(savedSword))this.equipSword(savedSword);
-  this.paused=false;this.started=false;this.clock=new THREE.Clock();this.lastUpdate=0;this.cameraYaw=0;this.cameraPitch=.04;this.cameraDistance=0;this.pointerLocked=false;this.dodgeDir=new THREE.Vector3(0,0,-1);this.gameOver=false;this.bind();this.createFirstPersonWeapon();this.spawnEncounter();
+  this.paused=false;this.started=false;this.clock=new THREE.Clock();this.lastUpdate=0;this.cameraYaw=0;this.cameraPitch=.04;this.cameraDistance=0;this.pointerLocked=false;this.dodgeDir=new THREE.Vector3(0,0,-1);this.gameOver=false;this.bind();this.createFirstPersonWeapon();
+ }
+ async initializeFirstEncounter(onProgress=()=>{}){
+  // Build the first wave in small batches so low-memory phones can render between batches.
+  this.enemies=[];this.bullets=[];this.waves=[];this.bossActive=false;
+  const n=(this.districtNumber-1)%6+1;
+  if(n<=3){
+   const total=5+n;
+   for(let done=0;done<total;){
+    const batch=Math.min(2,total-done);
+    this.spawnWave(batch);done+=batch;onProgress(done/total);
+    await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
+   }
+   this.encounterActive=true;this.encounterCleared=false;
+   this.onAdvance?.({show:false,district:this.districtNumber});this.onDistrict?.(this.districtNumber);this.updateUI();
+  }else{
+   this.spawnEncounter();onProgress(1);
+  }
  }
  spawnWave(n){const alive=this.enemies.filter(e=>!e.dead).length;for(let i=0;i<n;i++){const idx=this.enemies.length,model=makeFighter(this.scene,true,idx),a=(idx%7-3)*.32,r=12+(Math.floor(idx/7)%2)*3;model.root.position.set(this.player.root.position.x+Math.sin(a)*r,0,this.player.root.position.z-Math.cos(a)*r);model.root.rotation.y=Math.atan2(-model.root.position.x,-model.root.position.z);const cycle=Math.floor((this.districtNumber-1)/6),scale=1+cycle*.22,hp=(idx%5===4?80:65)*scale;const enemy={model,hp,maxHp:hp,attack:(1+Math.random())*(1+cycle*.12),damage:8*(1+cycle*.12),stun:0,dead:false,seed:idx,ranged:idx%5===4};this.enemies.push(enemy);if(this.realisticAsset)this.attachRealisticModel(enemy);}}
  loadRealisticEnemyModel(onProgress=()=>{}){
   const url=`${import.meta.env.BASE_URL}models/nathan-photogrammetry.glb`;
-  return new Promise(resolve=>new GLTFLoader().load(url,gltf=>{this.realisticAsset=gltf;this.realisticAssetKind='renderpeople-scan';for(const enemy of this.enemies)this.attachRealisticModel(enemy);resolve(true);},event=>{if(event.lengthComputable)onProgress(event.loaded/event.total);},error=>{this.realisticAssetError=error;console.warn('真人扫描模型加载失败，继续使用基础角色。',error);resolve(false);}));
+  return new Promise(resolve=>new GLTFLoader().load(url,async gltf=>{
+   this.realisticAsset=gltf;this.realisticAssetKind='renderpeople-scan';
+   const enemies=this.enemies.slice();
+   for(let i=0;i<enemies.length;i++){
+    this.attachRealisticModel(enemies[i]);
+    if(i%2===1){onProgress((i+1)/Math.max(1,enemies.length));await new Promise(done=>requestAnimationFrame(()=>done()));}
+   }
+   resolve(true);
+  },event=>{if(event.lengthComputable)onProgress(event.loaded/event.total);},error=>{this.realisticAssetError=error;console.warn('真人扫描模型加载失败，继续使用基础角色。',error);resolve(false);}));
  }
  attachRealisticModel(enemy){
   if(!this.realisticAsset||enemy.model.visualRoot)return;
