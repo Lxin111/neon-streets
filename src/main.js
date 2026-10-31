@@ -17,11 +17,13 @@ await nextFrame();
 const app=document.querySelector('#app');
 const world=await createWorld(setLoadingProgress);
 app.prepend(world.renderer.domElement);
+let game;
+const hud=document.querySelector('#hud');
 try {
  setLoadingProgress(96,'正在准备战斗系统…');
  await nextFrame();
  setLoadingProgress(96.01,'正在初始化战斗控制…');
- const game=new FighterGame(world);
+ game=new FighterGame(world);
  setLoadingProgress(96.05,'正在分阶段初始化玩家与敌人…');
  await game.initializeFirstEncounter((ratio,task)=>setLoadingProgress(96.05+ratio*.9,task||'正在初始化战斗… '+Math.round(ratio*100)+'%'));
  await nextFrame();
@@ -30,7 +32,6 @@ try {
  setLoadingProgress(99,modelLoaded?'正在启动战斗系统与操作控制…':'真人扫描模型暂不可用，正在启用基础角色…');
  await nextFrame();
  game.start();
- const hud=document.querySelector('#hud');
  setLoadingProgress(100,'加载完成，进入街区！');
  await new Promise(resolve=>setTimeout(resolve,260));
  loading.classList.add('hidden');
