@@ -61,7 +61,7 @@ function makeFighter(scene,isEnemy=false,index=0){
 export class FighterGame{
  constructor(world){
   this.world=world;this.scene=world.scene;this.camera=world.camera;this.renderer=world.renderer;
-  this.player=makeFighter(this.scene,false);this.player.root.position.set(0,0,5);this.player.root.rotation.y=Math.PI;this.player.root.visible=false;this.districtNumber=1;this.encounterActive=true;this.encounterCleared=false;this.coreSlots=Array(10).fill(null);this.cores=[];this.coreInventory=[];this.poisonTime=0;this.attackSpeedBonus=0;this.moveBonus=0;this.critBonus=0;this.critDamageBonus=0;this.maxHp=100;this.baseAttack=15;this.attackMultiplier=1;this.shopSpeedBonus=0;this.shopCritBonus=0;this.shopCritDmgBonus=0;this.shopHpBonus=0;this.shopCategories=['恢复补给','近战强化','枪械强化','防御装备','战术道具'];this.shopItems=(()=>{const catalog=[
+  this.player={root:new THREE.Group()};this.player.root.visible=false;this.scene.add(this.player.root);this.districtNumber=1;this.encounterActive=true;this.encounterCleared=false;this.coreSlots=Array(10).fill(null);this.cores=[];this.coreInventory=[];this.poisonTime=0;this.attackSpeedBonus=0;this.moveBonus=0;this.critBonus=0;this.critDamageBonus=0;this.maxHp=100;this.baseAttack=15;this.attackMultiplier=1;this.shopSpeedBonus=0;this.shopCritBonus=0;this.shopCritDmgBonus=0;this.shopHpBonus=0;this.shopCategories=['恢复补给','近战强化','枪械强化','防御装备','战术道具'];this.shopItems=(()=>{const catalog=[
 ['恢复补给',['纳米止血针','战地医疗包','高压凝血剂','细胞修复液','肾上腺素针','急救喷雾','抗毒血清','再生凝胶','生命维持剂','医疗无人机','强化血浆','应急心脏泵','纳米绷带','快速愈合剂','战术口粮','净化注射器','深层修复舱','生命虹吸器','复苏药剂','凤凰急救包'],'heal'],
 ['近战强化',['钨钢刀芯','振动刃口','合金刀脊','重斩配重','高速轴承','裂甲磨刃','电弧刀环','共振握柄','钛合金护手','连击稳定器','热等离子刃','锋刃校准器','斩击增幅器','刀锋导流槽','破盾刀尖','磁力刀鞘','相位切割器','超频刀柄','处决模块','剑气聚焦器'],'melee'],
 ['枪械强化',['轻量化枪机','高压弹簧','钨芯弹匣','枪口制退器','智能瞄准镜','脉冲扳机','稳定握把','穿甲弹头','快速换弹器','扩容弹匣','热成像模块','枪管冷却器','后坐补偿器','电磁加速器','连发控制器','弹道计算芯片','消音组件','高能弹药包','精准校准器','战术枪托'],'gun'],
@@ -71,17 +71,23 @@ export class FighterGame{
   this.enemies=[];this.realisticAsset=null;this.realisticAssetError=null;this.bullets=[];this.waves=[];this.particles=[];
   this.keys={};this.mobile={x:0,y:0};this.hp=100;this.xp=0;this.block=false;this.attackTime=0;this.iaidoTime=0;this.dodgeTime=0;this.invuln=0;this.combo=0;this.comboWindow=0;this.parryWindow=0;this.buff=null;this.buffTime=0;
   this.swordCharge=0;this.swordColor='#e7edf2';this.swordId='starter';this.gold=Number(localStorage.getItem('ns_gold')||0);this.kills=Number(localStorage.getItem('ns_kills')||0);this.achievements=JSON.parse(localStorage.getItem('ns_achievements')||'[]');this.achievementRecords=JSON.parse(localStorage.getItem('ns_achievement_records')||'[]');this.bestCombo=Number(localStorage.getItem('ns_best_combo')||0);this.ownedSwords=JSON.parse(localStorage.getItem('ns_owned_swords')||'[]');this.weaponOwned=JSON.parse(localStorage.getItem('ns_weapon_owned')||'{"solar":false,"demon":false,"ak":false}');this.activeWeapon='katana';this.weaponVisual=null;this.districtProgress=0;this.lastDistrictMark=0;this.bossActive=false;this.bossCount=0;this.timeStop=0;this.chest=null;this.onWeaponChest=null;this.onStatsToggle=null;this.onWeaponChange=null;const savedSword=localStorage.getItem('ns_sword');if(savedSword&&this.ownedSwords.includes(savedSword))this.equipSword(savedSword);
-  this.paused=false;this.started=false;this.clock=new THREE.Clock();this.lastUpdate=0;this.cameraYaw=0;this.cameraPitch=.04;this.cameraDistance=0;this.pointerLocked=false;this.dodgeDir=new THREE.Vector3(0,0,-1);this.gameOver=false;this.bind();this.createFirstPersonWeapon();
+  this.paused=false;this.started=false;this.clock=new THREE.Clock();this.lastUpdate=0;this.cameraYaw=0;this.cameraPitch=.04;this.cameraDistance=0;this.pointerLocked=false;this.dodgeDir=new THREE.Vector3(0,0,-1);this.gameOver=false;this.bind();
  }
  async initializeFirstEncounter(onProgress=()=>{}){
-  // Build the first wave in small batches so low-memory phones can render between batches.
+  // Defer expensive scene construction until after the loading screen can paint.
+  const yieldFrame=()=>new Promise(resolve=>requestAnimationFrame(()=>resolve()));
+  onProgress(0.05,'正在创建玩家模型…');await yieldFrame();
+  this.scene.remove(this.player.root);this.player=makeFighter(this.scene,false);this.player.root.position.set(0,0,5);this.player.root.rotation.y=Math.PI;this.player.root.visible=false;
+  onProgress(0.2,'正在创建第一人称武器…');await yieldFrame();
+  this.createFirstPersonWeapon();await yieldFrame();
+  onProgress(0.3,'正在准备初始敌人…');
   this.enemies=[];this.bullets=[];this.waves=[];this.bossActive=false;
   const n=(this.districtNumber-1)%6+1;
   if(n<=3){
    const total=5+n;
    for(let done=0;done<total;){
     const batch=Math.min(2,total-done);
-    this.spawnWave(batch);done+=batch;onProgress(done/total);
+    this.spawnWave(batch);done+=batch;onProgress(0.3+done/total*0.7);
     await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
    }
    this.encounterActive=true;this.encounterCleared=false;
