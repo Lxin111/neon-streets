@@ -26,3 +26,13 @@
 .shop-item strong{margin-top:auto}.list-row{gap:12px;align-items:center}.list-row span{display:flex;flex-direction:column;gap:4px}.list-row small{font-size:10px;color:#92a4ae}.list-row strong{white-space:nowrap;color:#e9c46a;font-size:11px}.list-row.earned{background:#15302155}
 .top-btn{cursor:pointer;touch-action:manipulation;position:relative;z-index:7}
 @media(max-width:700px){.shop-menu{width:96vw;max-height:92vh;padding:14px}.shop-list{max-height:68vh}.shop-category-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.shop-item{padding:9px;min-height:88px}.shop-item b{font-size:11px}.shop-item small{font-size:9px}.shop-item strong{font-size:10px}.shop-category .shop-subhead{top:40px}}
+
+/* Subtle Wuthering-Waves-style enemy direction cues around the reticle. */
+#enemyDirectionIndicators{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+.enemy-direction-arrow{position:absolute;left:50%;top:50%;width:13px;height:17px;transform-origin:50% 50%;filter:drop-shadow(0 0 4px #32eaffaa);opacity:.9}
+.enemy-direction-arrow::before{content:"";position:absolute;left:2px;top:0;width:0;height:0;border-left:4.5px solid transparent;border-right:4.5px solid transparent;border-bottom:12px solid #79f5ff}
+.enemy-direction-arrow::after{content:"";position:absolute;left:5px;top:9px;width:3px;height:6px;background:#d9ffff;border-radius:2px;box-shadow:0 0 5px #45eaff}
+.enemy-direction-arrow.boss{filter:drop-shadow(0 0 6px #ff4b65);opacity:1}
+.enemy-direction-arrow.boss::before{border-bottom-color:#ff6479;border-left-width:5.5px;border-right-width:5.5px;border-bottom-width:15px}
+.enemy-direction-arrow.boss::after{background:#fff0f1}
+@media(max-width:700px){.enemy-direction-arrow{transform-origin:50% 50%;width:12px;height:15px}.enemy-direction-arrow::before{border-left-width:4px;border-right-width:4px;border-bottom-width:11px}}
