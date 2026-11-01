@@ -107,6 +107,12 @@ function makeBuilding(group,x,z,w,d,h,color,seed){
       if(i%2===0)box(.035,1.16,.085,trim,wx+.39,y,z+d/2+.1,group);
     }
     if(floor%2===0) box(w*.82,.035,.1,glowMat('#162c3b',.3,.65,neon,.8),x,y+.78,z+d/2+.12,group);
+    if(floor%2===1&&i%2===0){
+      box(.62,.34,.28,dark,wx,y-.18,z+d/2+.16,group);
+      box(.7,.055,.32,trim,wx,y+.02,z+d/2+.18,group);
+      for(let vent=0;vent<4;vent++)box(.48,.018,.018,trim,wx,y-.28+vent*.065,z+d/2+.315,group);
+      box(.12,.08,.06,glowMat('#263d4b',.28,.5,neon,.45),wx+.38,y-.2,z+d/2+.2,group);
+    }
   }
   for(const side of [-1,1])box(.16,h*.82,.22,trim,x+side*(w/2-.12),h*.43,z+d/2+.12,group);
   box(w*.74,.52,.16,dark,x,h*.7,z+d/2+.16,group);
@@ -184,10 +190,16 @@ export async function createWorld(onProgress = () => {}) {
   }
   const trunk = detailedSurface('#59483a','bark',21,.96), leaves = detailedSurface('#435d4c','foliage',22,.94), bench = detailedSurface('#564b3e','wood',23,.88), bin = detailedSurface('#34484a','metal',24,.48,.58);
   for (const [x, z] of [[-13, -13], [13, -13], [-13, 13], [13, 13], [-29, 0], [29, 0], [0, 29], [0, -29]]) {
-    const t = new THREE.Mesh(new THREE.CylinderGeometry(.18, .24, 2, 7), trunk);
-    t.position.set(x, 1, z); t.castShadow = true; city.add(t);
-    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(1.35, 1), leaves);
-    crown.position.set(x, 2.55, z); crown.castShadow = true; city.add(crown);
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(.18, .24, 2, 12), trunk);
+    t.position.set(x, 1, z); t.castShadow = true; t.receiveShadow=true; city.add(t);
+    for(const side of [-1,1]){
+      const branch=new THREE.Mesh(new THREE.CylinderGeometry(.075,.12,1.05,8),trunk);branch.position.set(x+side*.32,1.72,z);branch.rotation.z=-side*.58;branch.castShadow=true;city.add(branch);
+    }
+    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(1.35, 2), leaves);
+    crown.position.set(x, 2.55, z); crown.scale.set(1.08,1.12,1.02);crown.castShadow = true; crown.receiveShadow=true;city.add(crown);
+    for(const [ox,oy,oz,scale] of [[-.72,.1,.12,.68],[.72,.05,-.08,.72],[.05,.58,.48,.64],[.12,-.2,-.62,.62]]){
+      const cluster=new THREE.Mesh(new THREE.IcosahedronGeometry(1,2),leaves);cluster.position.set(x+ox,2.55+oy,z+oz);cluster.scale.set(scale,scale*.92,scale);cluster.castShadow=true;cluster.receiveShadow=true;city.add(cluster);
+    }
     // Treat the whole visible tree (trunk + low canopy) as a solid obstacle.
     buildingColliders.push({ type: 'circle', x, z, r: 1.12 });
   }
@@ -205,12 +217,22 @@ export async function createWorld(onProgress = () => {}) {
     for(let i=0;i<7;i++){const bar=new THREE.Mesh(new THREE.BoxGeometry(.035,.025,.3),manholeEdge);bar.position.set(x+(rot===0?(i-3)*.18:0),.12,z+(rot===Math.PI/2?(i-3)*.18:0));bar.rotation.y=rot;city.add(bar);}
   }
   for (const [x, z] of [[-8, -12], [8, 12], [-18, 8], [18, -8]]) {
-    box(2.2, .18, .65, bench, x, .62, z, city);
-    box(.12, .65, .12, bench, x - .8, .32, z, city);
-    box(.12, .65, .12, bench, x + .8, .32, z, city);
+    // Separate seat/backrest slats, steel braces and visible fasteners.
+    box(2.2,.13,.16,bench,x,.66,z-.2,city);box(2.2,.13,.16,bench,x,.66,z,city);box(2.2,.13,.16,bench,x,.66,z+.2,city);
+    box(.12,.68,.12,manholeEdge,x-.82,.34,z-.2,city);box(.12,.68,.12,manholeEdge,x+.82,.34,z-.2,city);
+    for(const side of [-1,1]){
+      box(.12,.72,.12,manholeEdge,x+side*.82,.83,z+.22,city);
+      for(let slat=0;slat<3;slat++)box(2.12,.12,.12,bench,x,.86+slat*.17,z+.22,city);
+      for(let bolt=0;bolt<3;bolt++){const bx=x+side*.82+(bolt-1)*.24;box(.045,.045,.018,manholeMat,bx,.74,z-.28,city);}
+    }
     buildingColliders.push({ type: 'box', minX: x - 1.12, maxX: x + 1.12, minZ: z - .38, maxZ: z + .38 });
   }
-  for (const [x, z] of [[-10, 3], [10, -3], [-23, -13], [23, 13]]) { box(.75, 1.15, .75, bin, x, .58, z, city); buildingColliders.push({ type: 'box', minX: x - .48, maxX: x + .48, minZ: z - .48, maxZ: z + .48 }); }
+  for (const [x, z] of [[-10, 3], [10, -3], [-23, -13], [23, 13]]) {
+    box(.75,1.05,.75,bin,x,.53,z,city);box(.84,.13,.84,manholeEdge,x,.12+1.05,z,city);
+    box(.88,.08,.88,bin,x,1.14,z,city);box(.28,.12,.08,manholeEdge,x,1.23,z-.36,city);
+    for(let rib=0;rib<5;rib++){const rx=x-.3+rib*.15;box(.035,.78,.025,manholeEdge,rx,.54,z-.39,city);}
+    buildingColliders.push({ type: 'box', minX: x - .48, maxX: x + .48, minZ: z - .48, maxZ: z + .48 });
+  }
   for (let i = 0; i < 22; i++) {
     const a = i / 22 * Math.PI * 2, r = 65 + (i % 4) * 5, h = 16 + (i * 7 % 22);
     box(7, h, 7, detailedSurface('#65777a','concrete',seed+300,.88,.12), Math.sin(a) * r, h / 2, Math.cos(a) * r, city);
