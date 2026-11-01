@@ -161,7 +161,7 @@ export class FighterGame{
     new GLTFLoader().load(url,gltf=>{
      try{
       this.realisticAsset=gltf;this.realisticAssetKind='renderpeople-scan';
-      const enemies=this.enemies.filter(enemy=>!enemy.elite&&!enemy.boss);
+      const enemies=this.enemies.filter(enemy=>!enemy.dead&&!enemy.elite&&!enemy.boss);
       for(let i=0;i<enemies.length;i++){
        try{this.attachRealisticModel(enemies[i]);}
        catch(error){console.warn('真人扫描角色应用失败，保留基础模型。',error);this.realisticAssetError=error;}
