@@ -24,6 +24,10 @@ try {
   await page.locator('canvas').waitFor({ state: 'visible', timeout: 15000 });
   await page.screenshot({ path: 'artifacts/game-desktop.png', fullPage: true });
   console.log('PASS: desktop game startup and canvas render');
+  const hpLabel = await page.locator('#hpText').textContent();
+  if (!hpLabel || /NaN|undefined|null/.test(hpLabel) || !/^\\d+\\s*\\/\\s*\\d+$/.test(hpLabel.trim())) throw new Error('Player health HUD is invalid: ' + hpLabel);
+  console.log('PASS: health HUD displays finite current/max HP (' + hpLabel + ')');
+
   await page.locator('#achievementBtn').click();
   await page.locator('#achievementOverlay:not(.hidden)').waitFor({ state: 'visible' });
   if (await page.locator('#hud').getAttribute('data-paused') !== 'true') throw new Error('Game simulation did not pause when achievements opened.');
@@ -58,6 +62,25 @@ try {
   await page.locator('#closeStats').click();
   if (await page.locator('#hud').getAttribute('data-paused') !== 'false') throw new Error('Game did not resume after closing character stats.');
   console.log('PASS: all tested modal screens pause and resume the game; environment settings persist');
+  for (const [button, overlay] of [['#skillsBtn','#skillsOverlay'],['#questsBtn','#questsOverlay'],['#codexBtn','#codexOverlay'],['#saveBtn','#saveOverlay'],['#settingsBtn','#settingsOverlay']]) {
+    await page.locator(button).click();
+    await page.locator(overlay + ':not(.hidden)').waitFor({ state: 'visible' });
+    if (await page.locator('#hud').getAttribute('data-paused') !== 'true') throw new Error(overlay + ' did not pause the game.');
+    if (overlay === '#saveOverlay') {
+      await page.locator('#saveNowBtn').click();
+      const checkpoint = await page.evaluate(() => localStorage.getItem('ns_campaign_save'));
+      if (!checkpoint || !JSON.parse(checkpoint).districtNumber) throw new Error('Campaign checkpoint was not written.');
+    }
+    if (overlay === '#settingsOverlay') {
+      await page.locator('#fovSetting').evaluate(el => { el.value = '74'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+      const fov = await page.evaluate(() => localStorage.getItem('ns_fov'));
+      if (fov !== '74') throw new Error('FOV setting was not persisted.');
+    }
+    await page.locator(overlay + ' [data-close]').click();
+    if (await page.locator('#hud').getAttribute('data-paused') !== 'false') throw new Error(overlay + ' did not resume the game.');
+  }
+  console.log('PASS: skill tree, daily quests, codex, campaign save and graphics settings open/pause/resume');
+
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(300);
   const mobileControlsVisible = await page.locator('.mobile-controls').evaluate(el => getComputedStyle(el).display !== 'none');
