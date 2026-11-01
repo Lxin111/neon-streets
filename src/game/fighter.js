@@ -123,7 +123,7 @@ export class FighterGame{
 ['战术道具',['侦察无人机','诱饵投影器','电磁脉冲雷','震撼弹','烟幕发生器','追踪标记器','战场扫描仪','短距跃迁器','战术照明棒','干扰信标','自动炮台','声波诱导器','冷却喷射器','能量电池','快速部署绳索','区域扫描脉冲','时间缓滞器','磁力陷阱','战术补给箱','空投支援模块'],'tactical']
 ];let items=[];catalog.forEach(([,names,kind],ci)=>names.forEach((name,i)=>items.push({id:'goods_'+(ci*20+i+1),name,category:this.shopCategories[ci],desc:['战场即时补给与恢复','永久提升近战输出能力','强化枪械伤害与操控','提高生存能力与承伤上限','提供特殊战术与战场控制'][ci]+' · 等级 '+(1+Math.floor(i/4)),price:25+ci*12+i*9,kind,tier:1+Math.floor(i/4),index:i})));return items;})();
   this.enemies=[];this.realisticAsset=null;this.realisticAssetError=null;this.bullets=[];this.waves=[];this.particles=[];
-  this.keys={};this.mobile={x:0,y:0};const savedLevel=Number(localStorage.getItem('ns_level')||1);this.level=Number.isFinite(savedLevel)?THREE.MathUtils.clamp(Math.floor(savedLevel),1,9999):1;const savedXp=Number(localStorage.getItem('ns_xp')||0);this.xp=Number.isFinite(savedXp)?THREE.MathUtils.clamp(savedXp,0,99):0;this.attackMultiplier=Math.pow(1.02,this.level-1);this.baseAttack=Math.round(15*this.attackMultiplier);this.maxHp=100+5*(this.level-1);this.hp=this.maxHp;this.skillPoints=0;this.unlockedSkills=[];this.bestiarySeen=[];this.questState=null;this.block=false;this.attackTime=0;this.iaidoTime=0;this.dodgeTime=0;this.invuln=0;this.combo=0;this.comboWindow=0;this.parryWindow=0;this.buff=null;this.buffTime=0;
+  this.keys={};this.mobile={x:0,y:0};const savedLevel=Number(localStorage.getItem('ns_level')||1);this.level=Number.isFinite(savedLevel)?THREE.MathUtils.clamp(Math.floor(savedLevel),1,9999):1;const savedXp=Number(localStorage.getItem('ns_xp')||0);this.xp=Number.isFinite(savedXp)?THREE.MathUtils.clamp(savedXp,0,99):0;this.attackMultiplier=Math.pow(1.02,this.level-1);this.baseAttack=Math.round(15*this.attackMultiplier);this.maxHp=100+5*(this.level-1);this.hp=this.maxHp;this.skillPoints=0;this.unlockedSkills=[];this.bestiarySeen=[];this.storyClaims=[];this.bountyClaims=[];this.questState=null;this.block=false;this.attackTime=0;this.iaidoTime=0;this.dodgeTime=0;this.invuln=0;this.combo=0;this.comboWindow=0;this.parryWindow=0;this.buff=null;this.buffTime=0;
   this.swordCharge=0;this.swordColor='#e7edf2';this.swordId='starter';this.gold=Number(localStorage.getItem('ns_gold')||0);this.kills=Number(localStorage.getItem('ns_kills')||0);this.achievements=readSaved('ns_achievements',[]);this.achievementRecords=readSaved('ns_achievement_records',[]);this.bestCombo=Number(localStorage.getItem('ns_best_combo')||0);this.ownedSwords=readSaved('ns_owned_swords',[]);this.weaponOwned=readSaved('ns_weapon_owned',{solar:false,demon:false,ak:false});this.activeWeapon='katana';this.weaponVisual=null;this.districtProgress=0;this.lastDistrictMark=0;this.bossActive=false;this.bossCount=0;this.timeStop=0;this.chest=null;this.onWeaponChest=null;this.onStatsToggle=null;this.onWeaponChange=null;this.savedSword=localStorage.getItem('ns_sword');this.eliteKills=Number(localStorage.getItem('ns_elite_kills')||0);this.bossKills=Number(localStorage.getItem('ns_boss_kills')||0);this.shopPurchases=Number(localStorage.getItem('ns_shop_purchases')||0);this.attackCount=Number(localStorage.getItem('ns_attack_count')||0);
   this.mouseSensitivity=Number(localStorage.getItem('ns_sensitivity')||1);this.paused=false;this.started=false;this.clock=new THREE.Clock();this.lastUpdate=0;this.cameraYaw=0;this.cameraPitch=.04;this.cameraDistance=0;this.pointerLocked=false;this.dodgeDir=new THREE.Vector3(0,0,-1);this.gameOver=false;this.loadCampaignSave();this.initQuests();this.bind();this.initEnemyIndicators();
  }
@@ -507,7 +507,7 @@ initEnemyIndicators(){
   this.districtNumber=THREE.MathUtils.clamp(Math.floor(Number(saved.districtNumber)||1),1,9999);this.districtProgress=this.districtNumber;
   this.gold=Math.max(0,Number(saved.gold)||this.gold);this.kills=Math.max(0,Number(saved.kills)||this.kills);
   this.skillPoints=Math.max(0,Math.floor(Number(saved.skillPoints)||0));this.unlockedSkills=Array.isArray(saved.unlockedSkills)?saved.unlockedSkills:[];
-  this.bestiarySeen=Array.isArray(saved.bestiarySeen)?saved.bestiarySeen:[];
+  this.bestiarySeen=Array.isArray(saved.bestiarySeen)?saved.bestiarySeen:[];this.storyClaims=Array.isArray(saved.storyClaims)?saved.storyClaims:[];this.bountyClaims=Array.isArray(saved.bountyClaims)?saved.bountyClaims:[];
   this.weaponOwned={...this.weaponOwned,...(saved.weaponOwned||{})};this.activeWeapon=['katana','solar','demon','ak'].includes(saved.activeWeapon)?saved.activeWeapon:this.activeWeapon;this.ownedSwords=Array.isArray(saved.ownedSwords)?saved.ownedSwords:this.ownedSwords;
   this.shopSpeedBonus=Math.max(0,Number(saved.shopSpeedBonus)||0);this.shopCritBonus=Math.max(0,Number(saved.shopCritBonus)||0);this.shopCritDmgBonus=Math.max(0,Number(saved.shopCritDmgBonus)||0);this.shopHpBonus=Math.max(0,Number(saved.shopHpBonus)||0);
   this.questState=saved.questState&&typeof saved.questState==='object'?saved.questState:null;
@@ -518,12 +518,31 @@ initEnemyIndicators(){
   this.applyCores();this.applySkillBonuses();this.hp=THREE.MathUtils.clamp(Number(saved.hp)||this.maxHp,1,this.maxHp);
  }
  saveCampaign(){
-  const data={version:2,level:this.level,xp:this.xp,hp:this.hp,maxHp:this.maxHp,gold:this.gold,kills:this.kills,districtNumber:this.districtNumber,activeWeapon:this.activeWeapon,swordId:this.swordId,skillPoints:this.skillPoints,unlockedSkills:this.unlockedSkills,bestiarySeen:this.bestiarySeen,weaponOwned:this.weaponOwned,ownedSwords:this.ownedSwords,shopSpeedBonus:this.shopSpeedBonus,shopCritBonus:this.shopCritBonus,shopCritDmgBonus:this.shopCritDmgBonus,shopHpBonus:this.shopHpBonus,coreInventory:this.coreInventory,equippedCoreNames:this.cores.map(c=>c.name),attackMultiplier:this.attackMultiplier,questState:this.questState,updatedAt:Date.now()};
+  const data={version:2,level:this.level,xp:this.xp,hp:this.hp,maxHp:this.maxHp,gold:this.gold,kills:this.kills,districtNumber:this.districtNumber,activeWeapon:this.activeWeapon,swordId:this.swordId,skillPoints:this.skillPoints,unlockedSkills:this.unlockedSkills,bestiarySeen:this.bestiarySeen,storyClaims:this.storyClaims,bountyClaims:this.bountyClaims,weaponOwned:this.weaponOwned,ownedSwords:this.ownedSwords,shopSpeedBonus:this.shopSpeedBonus,shopCritBonus:this.shopCritBonus,shopCritDmgBonus:this.shopCritDmgBonus,shopHpBonus:this.shopHpBonus,coreInventory:this.coreInventory,equippedCoreNames:this.cores.map(c=>c.name),attackMultiplier:this.attackMultiplier,questState:this.questState,updatedAt:Date.now()};
   try{localStorage.setItem('ns_campaign_save',JSON.stringify(data));}catch(error){console.warn('战役存档失败',error);}
  }
  initQuests(){const day=new Date().toISOString().slice(0,10);if(!this.questState||this.questState.day!==day)this.questState={day,progress:{kills:0,attacks:0,bosses:0},claimed:[]};this.questState.progress??={kills:0,attacks:0,bosses:0};this.questState.claimed??=[];}
  trackQuest(type,amount=1){if(!this.questState)this.initQuests();if(!['kills','attacks','bosses'].includes(type))return;this.questState.progress[type]=Math.max(0,(Number(this.questState.progress[type])||0)+amount);this.saveCampaign();}
  getQuestCatalog(){return [{id:'daily_kills',type:'kills',title:'街区清剿',desc:'今日击败15名敌人',target:15,reward:80},{id:'daily_attacks',type:'attacks',title:'刀锋热身',desc:'今日发动40次攻击',target:40,reward:60},{id:'daily_boss',type:'bosses',title:'巨兽猎手',desc:'今日击败1名Boss',target:1,reward:150}];}
+ getLongMissionCatalog(){
+  return [
+   {id:'story_1',kind:'主线',title:'旧城清扫',desc:'累计击败10名敌人',progress:this.kills,target:10,reward:100,claims:this.storyClaims},
+   {id:'story_2',kind:'主线',title:'街区推进',desc:'抵达第3街区',progress:this.districtNumber,target:3,reward:180,claims:this.storyClaims},
+   {id:'story_3',kind:'主线',title:'巨兽猎手',desc:'击败首个区域Boss',progress:this.bossKills||0,target:1,reward:220,claims:this.storyClaims},
+   {id:'story_4',kind:'主线',title:'精英清除',desc:'累计击败15名精英',progress:this.eliteKills||0,target:15,reward:250,claims:this.storyClaims},
+   {id:'story_5',kind:'主线',title:'深入霓虹区',desc:'抵达第6街区',progress:this.districtNumber,target:6,reward:300,claims:this.storyClaims},
+   {id:'story_6',kind:'主线',title:'最终防线',desc:'抵达第12街区',progress:this.districtNumber,target:12,reward:600,claims:this.storyClaims},
+   {id:'bounty_1',kind:'悬赏',title:'街头通缉令',desc:'累计击败50名敌人',progress:this.kills,target:50,reward:120,claims:this.bountyClaims},
+   {id:'bounty_2',kind:'悬赏',title:'精英猎杀令',desc:'累计击败5名精英',progress:this.eliteKills||0,target:5,reward:150,claims:this.bountyClaims},
+   {id:'bounty_3',kind:'悬赏',title:'Boss围剿令',desc:'累计击败3名Boss',progress:this.bossKills||0,target:3,reward:300,claims:this.bountyClaims},
+   {id:'bounty_4',kind:'悬赏',title:'军需采购单',desc:'累计购买10件商品',progress:this.shopPurchases||0,target:10,reward:180,claims:this.bountyClaims}
+  ];
+ }
+ claimLongMission(id){
+  const mission=this.getLongMissionCatalog().find(x=>x.id===id);if(!mission||mission.claims.includes(id)||mission.progress<mission.target)return false;
+  if(mission.kind==='主线')this.storyClaims.push(id);else this.bountyClaims.push(id);
+  this.gold+=mission.reward;localStorage.setItem('ns_gold',String(this.gold));this.saveCampaign();this.updateUI();this.onToast?.(mission.kind+'完成：'+mission.title+' · +'+mission.reward+' 金币');return true;
+ }
  claimQuest(id){const q=this.getQuestCatalog().find(x=>x.id===id);if(!q||this.questState.claimed.includes(id)||(Number(this.questState.progress[q.type])||0)<q.target)return false;this.questState.claimed.push(id);this.gold+=q.reward;localStorage.setItem('ns_gold',String(this.gold));this.saveCampaign();this.updateUI();this.onToast?.('任务完成：'+q.title+' · +'+q.reward+' 金币');return true;}
  unlockSkill(id){
   const skills={edge:{name:'锋刃精通',cost:1},vital:{name:'生命强化',cost:1},swift:{name:'疾风步',cost:1},critical:{name:'弱点洞察',cost:2},dodge:{name:'极限闪避',cost:2},ki:{name:'剑气增幅',cost:2}};
