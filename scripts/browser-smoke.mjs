@@ -19,7 +19,7 @@ try {
   const page = await context.newPage();
   page.on('pageerror', error => pageErrors.push(error.stack || error.message));
   page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
-  await page.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.goto(baseURL + '?test=1', { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 120000 });
   await page.locator('canvas').waitFor({ state: 'visible', timeout: 15000 });
   await page.screenshot({ path: 'artifacts/game-desktop.png', fullPage: false, timeout: 90000, animations: 'disabled' });
@@ -28,6 +28,29 @@ try {
   const hpParts = (hpLabel || '').split('/').map(value => Number(value.trim()));
   if (!hpLabel || /NaN|undefined|null/.test(hpLabel) || hpParts.length !== 2 || !hpParts.every(Number.isFinite) || hpParts[1] <= 0) throw new Error('Player health HUD is invalid: ' + hpLabel);
   console.log('PASS: health HUD displays finite current/max HP (' + hpLabel + ')');
+  const sunVisible = await page.evaluate(() => { const t = window.__NEON_STREETS_TEST__; t.world.environment.setTime(12); return t.world.environment.sunVisual.visible; });
+  if (!sunVisible) throw new Error('Daytime sun visual is not visible at noon.');
+  const bossSpeeds = await page.evaluate(() => {
+    const { game } = window.__NEON_STREETS_TEST__;
+    const enemy = game.enemies.find(e => !e.dead);
+    if (!enemy) throw new Error('No enemy rig available for boss movement test.');
+    const root = enemy.model.root, original = root.position.clone(), player = game.player.root.position;
+    game.keys = {}; game.buff = null; game.poisonTime = 0; game.moveBonus = 0; game.skillMoveBonus = 0;
+    const speeds = [];
+    const originalMove = game.moveEnemyToward;
+    game.moveEnemyToward = (actor, vector) => { speeds.push(vector.length()); actor.model.root.position.add(vector); return vector.length(); };
+    for (let type = 0; type < 4; type++) {
+      root.position.set(player.x, 0, player.z - 20);
+      const boss = { model: enemy.model, boss: true, bossType: type, spider: type === 1, attack: 99, damageMultiplier: 1 };
+      const delta = player.clone().sub(root.position);
+      game.updateBossEnemy(boss, .1, delta, 20, 0);
+    }
+    root.position.copy(original); game.moveEnemyToward = originalMove;
+    return speeds;
+  });
+  if (bossSpeeds.length !== 4 || bossSpeeds.some(v => Math.abs(v - .39) > .015)) throw new Error('Boss movement is not 75% of the 5.2 player walk speed: ' + bossSpeeds.join(','));
+  console.log('PASS: visible daytime sun and all four boss movement speeds at 75% player walk speed');
+
 
   await page.locator('#achievementBtn').click();
   await page.locator('#achievementOverlay:not(.hidden)').waitFor({ state: 'visible' });
