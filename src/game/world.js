@@ -105,14 +105,14 @@ function makeBuilding(group,x,z,w,d,h,color,seed){
       box(.72,1.12,.075,pane,wx,y,z+d/2+.055,group);
       box(.78,.07,.1,dark,wx,y-.6,z+d/2+.09,group);
       if(i%2===0)box(.035,1.16,.085,trim,wx+.39,y,z+d/2+.1,group);
+      if(floor%2===1&&i%2===0){
+        box(.62,.34,.28,dark,wx,y-.18,z+d/2+.16,group);
+        box(.7,.055,.32,trim,wx,y+.02,z+d/2+.18,group);
+        for(let vent=0;vent<4;vent++)box(.48,.018,.018,trim,wx,y-.28+vent*.065,z+d/2+.315,group);
+        box(.12,.08,.06,glowMat('#263d4b',.28,.5,neon,.45),wx+.38,y-.2,z+d/2+.2,group);
+      }
     }
     if(floor%2===0) box(w*.82,.035,.1,glowMat('#162c3b',.3,.65,neon,.8),x,y+.78,z+d/2+.12,group);
-    if(floor%2===1&&i%2===0){
-      box(.62,.34,.28,dark,wx,y-.18,z+d/2+.16,group);
-      box(.7,.055,.32,trim,wx,y+.02,z+d/2+.18,group);
-      for(let vent=0;vent<4;vent++)box(.48,.018,.018,trim,wx,y-.28+vent*.065,z+d/2+.315,group);
-      box(.12,.08,.06,glowMat('#263d4b',.28,.5,neon,.45),wx+.38,y-.2,z+d/2+.2,group);
-    }
   }
   for(const side of [-1,1])box(.16,h*.82,.22,trim,x+side*(w/2-.12),h*.43,z+d/2+.12,group);
   box(w*.74,.52,.16,dark,x,h*.7,z+d/2+.16,group);
