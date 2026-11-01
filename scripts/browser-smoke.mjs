@@ -49,6 +49,22 @@ try {
   });
   if (bossSpeeds.length !== 4 || bossSpeeds.some(v => Math.abs(v - .39) > .015)) throw new Error('Boss movement is not 75% of the 5.2 player walk speed: ' + bossSpeeds.join(','));
   console.log('PASS: visible daytime sun and all four boss movement speeds at 75% player walk speed');
+  const hulkStomp = await page.evaluate(() => {
+    const { game } = window.__NEON_STREETS_TEST__, enemy = game.enemies.find(e => !e.dead);
+    const root = enemy.model.root, original = root.position.clone(), leg = enemy.model.legR, oldRotation = leg.rotation.x, oldMove = game.moveEnemyToward;
+    root.position.set(game.player.root.position.x, 0, game.player.root.position.z - 5);
+    game.moveEnemyToward = (actor, vector) => { actor.model.root.position.add(vector); };
+    const boss = { model: enemy.model, boss: true, bossType: 0, attack: 0, damageMultiplier: 1 };
+    const delta = game.player.root.position.clone().sub(root.position);
+    game.updateBossEnemy(boss, .016, delta, 5, 0);
+    const lifted = boss.stompTime > 0 && leg.rotation.x < 0;
+    root.position.copy(original); leg.rotation.x = oldRotation; game.moveEnemyToward = oldMove;
+    game.attachRealisticModel({ elite: true }); game.attachRealisticModel({ boss: true });
+    return lifted;
+  });
+  if (!hulkStomp) throw new Error('Hulk did not lift its leg before the stomp attack.');
+  console.log('PASS: Hulk leg-lift stomp telegraph and photogrammetry isolation guards');
+
 
 
   await page.locator('#achievementBtn').click();
