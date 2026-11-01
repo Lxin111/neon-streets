@@ -159,8 +159,11 @@ try {
   livePage.on('requestfailed', request => liveFailures.push(request.url() + ' :: ' + (request.failure()?.errorText || 'failed')));
   livePage.on('response', response => { if (response.status() >= 400) liveFailures.push(response.status() + ' ' + response.url()); });
   livePage.on('pageerror', error => liveFailures.push('PAGE ERROR: ' + (error.stack || error.message)));
-  await livePage.goto('https://lxin111.github.io/neon-streets/', { waitUntil: 'domcontentloaded', timeout: 90000 });
-  await livePage.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 120000 });
+  livePage.on('console', message => { if (message.type() === 'error') liveFailures.push('CONSOLE ERROR: ' + message.text()); });
+  const liveResponse = await livePage.goto('https://lxin111.github.io/neon-streets/', { waitUntil: 'domcontentloaded', timeout: 90000 });
+  if (!liveResponse?.ok()) throw new Error('Live GitHub Pages returned HTTP ' + liveResponse?.status() + ': ' + liveFailures.join(' | '));
+  try { await livePage.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 90000 }); }
+  catch (error) { const body = (await livePage.locator('body').innerText().catch(() => '')).slice(0, 500); throw new Error('Live site did not finish starting. ' + liveFailures.join(' | ') + ' BODY=' + body + ' :: ' + error.message); }
   await livePage.locator('#app > canvas').waitFor({ state: 'visible', timeout: 15000 });
   if (liveFailures.length) throw new Error('Live site network/runtime failures:\\n' + liveFailures.join('\\n'));
   console.log('PASS: published GitHub Pages site starts and renders');
