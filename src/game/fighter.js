@@ -161,7 +161,7 @@ export class FighterGame{
     new GLTFLoader().load(url,gltf=>{
      try{
       this.realisticAsset=gltf;this.realisticAssetKind='renderpeople-scan';
-      const enemies=this.enemies.slice();
+      const enemies=this.enemies.filter(enemy=>!enemy.elite&&!enemy.boss);
       for(let i=0;i<enemies.length;i++){
        try{this.attachRealisticModel(enemies[i]);}
        catch(error){console.warn('真人扫描角色应用失败，保留基础模型。',error);this.realisticAssetError=error;}
@@ -174,7 +174,7 @@ export class FighterGame{
   });
  }
  attachRealisticModel(enemy){
-  if(!this.realisticAsset||enemy.model.visualRoot)return;
+  if(!enemy||enemy.elite||enemy.boss||!this.realisticAsset||enemy.model.visualRoot)return;
   const rig=enemy.model,visual=cloneSkeleton(this.realisticAsset.scene);
   // Normalize only after resetting the cloned scene root scale. The old code
   // measured height before this reset, which could produce an enormous scale
