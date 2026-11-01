@@ -133,7 +133,7 @@ export class FighterGame{
   onProgress(0.05,'正在创建玩家模型…');await yieldFrame();
   this.scene.remove(this.player.root);this.player=makeFighter(this.scene,false);this.player.root.position.set(0,0,5);this.player.root.rotation.y=Math.PI;this.player.root.visible=false;
   onProgress(0.2,'正在创建第一人称武器…');await yieldFrame();
-  this.createFirstPersonWeapon();if(this.savedSword&&this.ownedSwords.includes(this.savedSword))this.equipSword(this.savedSword);await yieldFrame();
+  this.createFirstPersonWeapon();if(this.savedSword&&this.ownedSwords.includes(this.savedSword))this.equipSword(this.savedSword);if(this.activeWeapon!=='katana'&&this.weaponOwned[this.activeWeapon])this.switchWeapon(this.activeWeapon);await yieldFrame();
   onProgress(0.3,'正在准备初始敌人…');
   this.enemies=[];this.bullets=[];this.waves=[];this.bossActive=false;
   const n=(this.districtNumber-1)%6+1;
@@ -538,8 +538,8 @@ initEnemyIndicators(){
  updateBossEnemy(e,dt,delta,dist,phase){
   const root=e.model.root,rig=e.model;root.rotation.y=Math.atan2(-delta.x,-delta.z);
   const playerSpeed=(this.buff==='狂暴'?7.4:5.2)*(this.keys.ShiftLeft||this.keys.ShiftRight?1.45:1)*(this.poisonTime>0?.5:1)*(1+(this.moveBonus||0)+(this.skillMoveBonus||0)),bossSpeed=playerSpeed*.75;
-  const stop=e.bossType===0?3.25:e.spider?6.4:3.5,toward=delta.clone().setY(0);
-  if(toward.lengthSq()>.0001){toward.normalize();if(dist>stop+.12)this.moveEnemyToward(e,toward.clone().multiplyScalar(Math.min(bossSpeed*dt,dist-stop)),e.spider?1.35:e.bossType===0?1.05:.95);else{const tangent=new THREE.Vector3(-toward.z,0,toward.x).multiplyScalar((Math.sin(phase*.7)>=0?1:-1)*Math.min(bossSpeed*.22*dt,.12));this.moveEnemyToward(e,tangent,e.spider?1.35:.95);}}
+  const stop=e.spider?4.8:2.8,toward=delta.clone().setY(0);
+  if(toward.lengthSq()>.0001){toward.normalize();if(dist>stop+.12)this.moveEnemyToward(e,toward.clone().multiplyScalar(Math.min(bossSpeed*dt,dist-stop)),e.spider?1.35:e.bossType===0?1.05:.95);else{const tangent=new THREE.Vector3(-toward.z,0,toward.x).multiplyScalar((Math.sin(phase*.7)>=0?1:-1)*bossSpeed*dt);this.moveEnemyToward(e,tangent,e.spider?1.35:.95);}}
   rig.anim=(rig.anim||0)+dt*(dist>stop?5.2:2.2);const stride=Math.sin(rig.anim)*.32;if(rig.legL)rig.legL.rotation.x=stride;if(rig.legR)rig.legR.rotation.x=-stride;
   if(rig.armL)rig.armL.rotation.x=THREE.MathUtils.damp(rig.armL.rotation.x,Math.sin(phase*1.6)*.08,4,dt);if(rig.armR)rig.armR.rotation.x=THREE.MathUtils.damp(rig.armR.rotation.x,Math.sin(phase*1.6+1)*.08,4,dt);
   if(e.spider&&rig.legs)for(const leg of rig.legs){const a=leg.userData.phase||0;leg.rotation.z=Math.sin(phase*4+a)*.13;leg.rotation.x=Math.cos(phase*4+a)*.08;}
