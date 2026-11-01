@@ -57,6 +57,12 @@ function renderSystems(){
  const quests=game.getQuestCatalog();
  document.querySelector('#questList').innerHTML=quests.map(q=>{const value=Number(game.questState.progress[q.type])||0,claimed=game.questState.claimed.includes(q.id),done=value>=q.target;return '<div class="list-row '+(claimed?'earned':'')+'"><span><b>'+q.title+'</b><small>'+q.desc+' · '+Math.min(value,q.target)+'/'+q.target+' · 奖励 '+q.reward+' 金币</small></span><button class="system-action" data-claim-quest="'+q.id+'" '+(!done||claimed?'disabled':'')+'>'+(claimed?'已领取':done?'领取奖励':'进行中')+'</button></div>';}).join('');
  document.querySelectorAll('[data-claim-quest]').forEach(b=>b.addEventListener('click',()=>{game.claimQuest(b.dataset.claimQuest);renderSystems();}));
+ const longMissions=game.getLongMissionCatalog();
+ for(const kind of ['主线','悬赏']){
+  const rows=longMissions.filter(m=>m.kind===kind);
+  document.querySelector('#questList').insertAdjacentHTML('beforeend','<h3 class="shop-subhead">'+(kind==='主线'?'主线任务 · 街区战役':'悬赏任务 · 长期通缉')+'</h3>'+rows.map(m=>{const claimed=m.claims.includes(m.id),done=m.progress>=m.target;return '<div class="list-row '+(claimed?'earned':'')+'"><span><b>'+m.title+'</b><small>'+m.desc+' · '+Math.min(m.progress,m.target)+'/'+m.target+' · 奖励 '+m.reward+' 金币</small></span><button class="system-action" data-claim-mission="'+m.id+'" '+(!done||claimed?'disabled':'')+'>'+(claimed?'已领取':done?'领取奖励':'未完成')+'</button></div>';}).join(''));
+ }
+ document.querySelectorAll('[data-claim-mission]').forEach(b=>b.addEventListener('click',()=>{game.claimLongMission(b.dataset.claimMission);renderSystems();}));
  const entries=[['street','普通街头敌人','近战基础单位，贴近后挥拳攻击。'],['shooter','远程射手','保持距离并发射弹道攻击。'],['elite','精英战术兵','高生命值精英单位，具备强化攻击。'],['hulk','绿巨人','巨型近战Boss，会抬腿蓄力并重踏地面。'],['spider','黑蜘蛛','高速蛛形Boss，使用蛛网远程控制。'],['colossus','裂地巨像','重装石质Boss，擅长范围震地攻击。'],['reaper','虚空收割者','虚空Boss，连续发射追踪弹幕。']];
  document.querySelector('#codexList').innerHTML=entries.map(([id,name,desc])=>{const seen=game.bestiarySeen.includes(id);return '<div class="list-row '+(seen?'earned':'')+'"><span><b>'+(seen?name:'未知目标')+'</b><small>'+(seen?desc:'击败该类型敌人以解锁档案')+'</small></span><strong>'+(seen?'已解锁':'未发现')+'</strong></div>';}).join('');
  document.querySelector('#saveSummary').textContent='街区 '+game.districtNumber+' · LV.'+game.level+' · '+game.gold+' 金币 · '+game.cores.length+' 个已装备核心 · '+game.unlockedSkills.length+' 项技能';
