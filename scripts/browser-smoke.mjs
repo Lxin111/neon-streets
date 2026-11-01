@@ -21,7 +21,7 @@ try {
   page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
   await page.goto(baseURL + '?test=1', { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 120000 });
-  await page.locator('canvas').waitFor({ state: 'visible', timeout: 15000 });
+  await page.locator('#app > canvas').waitFor({ state: 'visible', timeout: 15000 });
   console.log('PASS: desktop game startup and canvas render');
   await page.locator('#miniMapPanel').waitFor({ state: 'visible' });
   const radarSize = await page.locator('#miniMap').evaluate(canvas => ({ width: canvas.width, height: canvas.height, context: !!canvas.getContext('2d') }));
@@ -161,7 +161,7 @@ try {
   livePage.on('pageerror', error => liveFailures.push('PAGE ERROR: ' + (error.stack || error.message)));
   await livePage.goto('https://lxin111.github.io/neon-streets/', { waitUntil: 'domcontentloaded', timeout: 90000 });
   await livePage.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 120000 });
-  await livePage.locator('canvas').waitFor({ state: 'visible', timeout: 15000 });
+  await livePage.locator('#app > canvas').waitFor({ state: 'visible', timeout: 15000 });
   if (liveFailures.length) throw new Error('Live site network/runtime failures:\\n' + liveFailures.join('\\n'));
   console.log('PASS: published GitHub Pages site starts and renders');
 
