@@ -54,7 +54,7 @@ try {
     const root = enemy.model.root, original = root.position.clone(), leg = enemy.model.legR, oldRotation = leg.rotation.x, oldMove = game.moveEnemyToward;
     root.position.set(game.player.root.position.x, 0, game.player.root.position.z - 5);
     game.moveEnemyToward = (actor, vector) => { actor.model.root.position.add(vector); };
-    const boss = { model: enemy.model, boss: true, bossType: 0, attack: 0, damageMultiplier: 1 };
+    const boss = { model: enemy.model, boss: true, bossType: 0, hp: 100, maxHp: 100, attack: 0, damageMultiplier: 1 };
     const delta = game.player.root.position.clone().sub(root.position);
     game.updateBossEnemy(boss, .016, delta, 5, 0);
     const lifted = boss.stompTime > 0 && leg.rotation.x < 0 && boss.weakpointOpen;
