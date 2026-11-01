@@ -28,10 +28,11 @@ try {
  setLoadingProgress(96.05,'正在分阶段初始化玩家与敌人…');
  startupStage='创建玩家模型和初始敌人';await game.initializeFirstEncounter((ratio,task)=>setLoadingProgress(96.05+ratio*.9,task||'正在初始化战斗… '+Math.round(ratio*100)+'%'));
  await nextFrame();
- setLoadingProgress(97,'正在载入真人扫描模型、4K材质与动作捕捉…');
- startupStage='加载真人扫描角色模型';const modelLoaded=await game.loadRealisticEnemyModel(ratio=>setLoadingProgress(97+ratio*2,'正在载入真人扫描模型与动作捕捉…'));
- setLoadingProgress(99,modelLoaded?'正在启动战斗系统与操作控制…':'真人扫描模型暂不可用，正在启用基础角色…');
+ setLoadingProgress(97,'正在启动街区与战斗系统…');
+ startupStage='后台加载普通敌人扫描模型';
+ const modelLoadTask=game.loadRealisticEnemyModel().then(loaded=>{if(!loaded)console.info('真人扫描模型暂不可用，继续使用普通敌人程序模型。');return loaded;}).catch(error=>{console.warn('真人扫描模型后台加载失败，游戏继续运行。',error);return false;});
  await nextFrame();
+ setLoadingProgress(99,'正在启动战斗系统与操作控制…');
  startupStage='启动游戏主循环';game.start();
  setLoadingProgress(100,'加载完成，进入街区！');
  await new Promise(resolve=>setTimeout(resolve,260));
