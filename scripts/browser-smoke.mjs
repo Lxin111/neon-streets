@@ -22,7 +22,6 @@ try {
   await page.goto(baseURL + '?test=1', { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 120000 });
   await page.locator('canvas').waitFor({ state: 'visible', timeout: 15000 });
-  await page.screenshot({ path: 'artifacts/game-desktop.png', fullPage: false, timeout: 90000, animations: 'disabled' });
   console.log('PASS: desktop game startup and canvas render');
   const hpLabel = await page.locator('#hpText').textContent();
   const hpParts = (hpLabel || '').split('/').map(value => Number(value.trim()));
@@ -57,7 +56,6 @@ try {
   if (await page.locator('#hud').getAttribute('data-paused') !== 'true') throw new Error('Game simulation did not pause when achievements opened.');
   const achievements = await page.locator('#achievementList .list-row').count();
   if (achievements < 300) throw new Error('Expected at least 300 achievement rows; found ' + achievements);
-  await page.screenshot({ path: 'artifacts/achievements.png', fullPage: true });
   console.log('PASS: achievement menu renders ' + achievements + ' entries');
   await page.locator('#achievementOverlay [data-close]').click();
   if (await page.locator('#hud').getAttribute('data-paused') !== 'false') throw new Error('Game did not resume after closing achievements.');
@@ -66,7 +64,6 @@ try {
   if (await page.locator('#hud').getAttribute('data-paused') !== 'true') throw new Error('Game simulation did not pause when shop opened.');
   const shopItems = await page.locator('#shopList [data-buy-item]').count();
   if (shopItems < 100) throw new Error('Expected at least 100 shop items; found ' + shopItems);
-  await page.screenshot({ path: 'artifacts/shop-desktop.png', fullPage: true });
   console.log('PASS: shop menu renders ' + shopItems + ' products');
   await page.locator('#shopOverlay [data-close]').click();
   if (await page.locator('#hud').getAttribute('data-paused') !== 'false') throw new Error('Game did not resume after closing shop.');
@@ -109,7 +106,6 @@ try {
   await page.waitForTimeout(300);
   const mobileControlsVisible = await page.locator('.mobile-controls').evaluate(el => getComputedStyle(el).display !== 'none');
   if (!mobileControlsVisible) throw new Error('Mobile controls are not visible at a 390px viewport.');
-  await page.screenshot({ path: 'artifacts/game-mobile.png', fullPage: true });
   console.log('PASS: mobile layout and touch controls are visible');
   if (pageErrors.length) throw new Error('Browser runtime errors:\n' + pageErrors.join('\n\n'));
   console.log('PAGE_ERRORS=0');
@@ -123,7 +119,6 @@ try {
   await livePage.goto('https://lxin111.github.io/neon-streets/', { waitUntil: 'domcontentloaded', timeout: 90000 });
   await livePage.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 120000 });
   await livePage.locator('canvas').waitFor({ state: 'visible', timeout: 15000 });
-  await livePage.screenshot({ path: 'artifacts/game-live-site.png', fullPage: true });
   if (liveFailures.length) throw new Error('Live site network/runtime failures:\\n' + liveFailures.join('\\n'));
   console.log('PASS: published GitHub Pages site starts and renders');
 
