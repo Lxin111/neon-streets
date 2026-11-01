@@ -59,3 +59,6 @@
 .topbar .top-btn{white-space:nowrap}
 @media(max-width:900px){.topbar{gap:4px}.topbar .brand{font-size:10px}.topbar .district{display:none}.topbar .top-btn{padding:7px 6px;font-size:9px}}
 @media(max-width:560px){.topbar{flex-wrap:wrap;justify-content:flex-end;padding:7px 8px}.topbar .brand{margin-right:auto}.topbar .top-btn{font-size:8px;padding:6px 5px}.topbar #musicBtn{display:none}.player-panel{top:76px}}
+
+#bossPhase{display:inline-block;margin-left:6px;color:#ffd78a;font-size:10px;letter-spacing:.04em}
+#bossHpText{margin-left:10px;font-variant-numeric:tabular-nums}
