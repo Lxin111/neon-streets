@@ -22,10 +22,11 @@ try {
   await page.goto(baseURL, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 120000 });
   await page.locator('canvas').waitFor({ state: 'visible', timeout: 15000 });
-  await page.screenshot({ path: 'artifacts/game-desktop.png', fullPage: true });
+  await page.screenshot({ path: 'artifacts/game-desktop.png', fullPage: false, timeout: 90000, animations: 'disabled' });
   console.log('PASS: desktop game startup and canvas render');
   const hpLabel = await page.locator('#hpText').textContent();
-  if (!hpLabel || /NaN|undefined|null/.test(hpLabel) || !/^\\d+\\s*\\/\\s*\\d+$/.test(hpLabel.trim())) throw new Error('Player health HUD is invalid: ' + hpLabel);
+  const hpParts = (hpLabel || '').split('/').map(value => Number(value.trim()));
+  if (!hpLabel || /NaN|undefined|null/.test(hpLabel) || hpParts.length !== 2 || !hpParts.every(Number.isFinite) || hpParts[1] <= 0) throw new Error('Player health HUD is invalid: ' + hpLabel);
   console.log('PASS: health HUD displays finite current/max HP (' + hpLabel + ')');
 
   await page.locator('#achievementBtn').click();
