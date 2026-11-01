@@ -62,3 +62,12 @@
 
 #bossPhase{display:inline-block;margin-left:6px;color:#ffd78a;font-size:10px;letter-spacing:.04em}
 #bossHpText{margin-left:10px;font-variant-numeric:tabular-nums}
+
+#miniMapPanel{position:absolute;right:16px;top:76px;width:190px;padding:8px 9px 6px;background:linear-gradient(145deg,#08131de8,#0b1b28d9);border:1px solid #3b718566;border-radius:9px;box-shadow:0 8px 28px #0008;z-index:4;pointer-events:none;backdrop-filter:blur(8px)}
+#miniMapPanel>div{display:flex;justify-content:space-between;align-items:center;color:#9cebf5;font:700 10px 'Barlow Condensed',sans-serif;letter-spacing:.13em}
+#miniMapPanel>div small{color:#718e9b;font:9px 'Noto Sans SC',sans-serif;letter-spacing:0}
+#miniMap{display:block;width:170px;height:170px;margin:5px auto 2px;border-radius:50%;border:1px solid #4e91a5;background:#06111b}
+#miniMapPanel footer{display:flex;justify-content:center;gap:7px;color:#a6b7c0;font-size:9px}
+#miniMapPanel footer i,#miniMapPanel footer b,#miniMapPanel footer strong{display:inline-block;width:6px;height:6px;border-radius:50%;background:#eaffff;margin-right:2px}
+#miniMapPanel footer b{background:#52eaff}#miniMapPanel footer strong{background:#ff405d}
+@media(max-width:700px){#miniMapPanel{top:126px;right:8px;width:142px;padding:6px}#miniMap{width:126px;height:126px}#miniMapPanel footer{font-size:8px;gap:4px}}
