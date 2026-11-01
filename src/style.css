@@ -48,3 +48,14 @@
 .environment-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .environment-presets button{padding:9px 3px;border:1px solid #e9c46a44;background:#e9c46a12;color:#f3dda1;border-radius:6px;font-size:10px}
 @media(max-width:700px){.environment-menu{padding:20px}.environment-presets button{font-size:9px}.topbar #environmentBtn{font-size:8px;padding:7px 6px}}
+
+/* Progression systems, save screen and responsive compact HUD */
+.system-action{min-width:74px;padding:8px 12px;border:1px solid #42d9ef66;border-radius:6px;background:#102a35;color:#a9f4ff;font:700 11px 'Noto Sans SC',sans-serif;cursor:pointer}
+.system-action:disabled{opacity:.42;cursor:not-allowed;border-color:#71818a55;background:#1a2228;color:#87949b}
+#skillList .list-row,#questList .list-row,#codexList .list-row{min-height:62px}
+#settingsOverlay .environment-control{margin:14px 0}
+#settingsOverlay input[type=range]{accent-color:#e9c46a}
+#saveSummary{margin:18px 0;padding:14px}
+.topbar .top-btn{white-space:nowrap}
+@media(max-width:900px){.topbar{gap:4px}.topbar .brand{font-size:10px}.topbar .district{display:none}.topbar .top-btn{padding:7px 6px;font-size:9px}}
+@media(max-width:560px){.topbar{flex-wrap:wrap;justify-content:flex-end;padding:7px 8px}.topbar .brand{margin-right:auto}.topbar .top-btn{font-size:8px;padding:6px 5px}.topbar #musicBtn{display:none}.player-panel{top:76px}}
