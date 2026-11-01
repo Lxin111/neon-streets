@@ -220,11 +220,9 @@ export async function createWorld(onProgress = () => {}) {
     // Separate seat/backrest slats, steel braces and visible fasteners.
     box(2.2,.13,.16,bench,x,.66,z-.2,city);box(2.2,.13,.16,bench,x,.66,z,city);box(2.2,.13,.16,bench,x,.66,z+.2,city);
     box(.12,.68,.12,manholeEdge,x-.82,.34,z-.2,city);box(.12,.68,.12,manholeEdge,x+.82,.34,z-.2,city);
-    for(const side of [-1,1]){
-      box(.12,.72,.12,manholeEdge,x+side*.82,.83,z+.22,city);
-      for(let slat=0;slat<3;slat++)box(2.12,.12,.12,bench,x,.86+slat*.17,z+.22,city);
-      for(let bolt=0;bolt<3;bolt++){const bx=x+side*.82+(bolt-1)*.24;box(.045,.045,.018,manholeMat,bx,.74,z-.28,city);}
-    }
+    for(const side of [-1,1])box(.12,.72,.12,manholeEdge,x+side*.82,.83,z+.22,city);
+    for(let slat=0;slat<3;slat++)box(2.12,.12,.12,bench,x,.86+slat*.17,z+.22,city);
+    for(const side of [-1,1])for(let bolt=0;bolt<3;bolt++){const bx=x+side*.82+(bolt-1)*.24;box(.045,.045,.018,manholeMat,bx,.74,z-.28,city);}
     buildingColliders.push({ type: 'box', minX: x - 1.12, maxX: x + 1.12, minZ: z - .38, maxZ: z + .38 });
   }
   for (const [x, z] of [[-10, 3], [10, -3], [-23, -13], [23, 13]]) {
