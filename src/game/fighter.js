@@ -567,7 +567,7 @@ initEnemyIndicators(){
   e.weakpointOpen=false;const cadence=e.enraged?.72:1;
   if(e.bossType===0){
    if(e.stompTime>0){e.stompTime=Math.max(0,e.stompTime-dt);const elapsed=1.22-e.stompTime,lift=elapsed<.48?THREE.MathUtils.smoothstep(elapsed,0,.48):elapsed<.72?1-THREE.MathUtils.smoothstep(elapsed,.48,.72):0,leg=rig.legR||rig.legL,other=rig.legL;e.weakpointOpen=elapsed<.7;if(leg)leg.rotation.x=-1.05*lift;if(other&&other!==leg)other.rotation.x=.18*lift;if(elapsed>=.7&&!e.stompHit){e.stompHit=true;this.hulkStomp(e);}if(e.stompTime===0){if(leg)leg.rotation.x=0;if(other&&other!==leg)other.rotation.x=0;}}
-   else if(dist<5.8&&e.attack<=0){e.attack=2.7*cadence;e.stompTime=1.22;e.stompHit=false;this.onToast?.('绿巨人抬腿蓄力！胸口弱点暴露，准备躲避踩踏！');}
+   else if(dist<5.8&&e.attack<=0){e.attack=2.7*cadence;e.stompTime=1.22;e.stompHit=false;e.weakpointOpen=true;const liftedLeg=rig.legR||rig.legL;if(liftedLeg)liftedLeg.rotation.x=-.08;this.onToast?.('绿巨人抬腿蓄力！胸口弱点暴露，准备躲避踩踏！');}
    rig.armL.rotation.x=THREE.MathUtils.damp(rig.armL.rotation.x,-.35,3,dt);rig.armR.rotation.x=THREE.MathUtils.damp(rig.armR.rotation.x,.35,3,dt);
   }else if(e.spider){
    if(e.webWindup>0){e.webWindup=Math.max(0,e.webWindup-dt);e.weakpointOpen=true;if(e.webWindup===0){this.spiderWeb(e);e.weakpointOpen=false;}}
