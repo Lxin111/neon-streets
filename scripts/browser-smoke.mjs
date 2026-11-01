@@ -23,6 +23,11 @@ try {
   await page.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 120000 });
   await page.locator('canvas').waitFor({ state: 'visible', timeout: 15000 });
   console.log('PASS: desktop game startup and canvas render');
+  await page.locator('#miniMapPanel').waitFor({ state: 'visible' });
+  const radarSize = await page.locator('#miniMap').evaluate(canvas => ({ width: canvas.width, height: canvas.height, context: !!canvas.getContext('2d') }));
+  if (radarSize.width !== 180 || radarSize.height !== 180 || !radarSize.context) throw new Error('Tactical radar canvas did not initialize.');
+  console.log('PASS: tactical radar initialized');
+
   const hpLabel = await page.locator('#hpText').textContent();
   const hpParts = (hpLabel || '').split('/').map(value => Number(value.trim()));
   if (!hpLabel || /NaN|undefined|null/.test(hpLabel) || hpParts.length !== 2 || !hpParts.every(Number.isFinite) || hpParts[1] <= 0) throw new Error('Player health HUD is invalid: ' + hpLabel);
