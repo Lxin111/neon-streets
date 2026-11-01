@@ -56,7 +56,10 @@ function detailedSurface(color,kind='concrete',seed=1,roughness=.82,metalness=0)
   const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(kind==='bark'?1.2:kind==='asphalt'?3.4:2.2,kind==='bark'?2.8:2.2);map.anisotropy=8;
   const bumpCanvas=document.createElement('canvas');bumpCanvas.width=bumpCanvas.height=size;const bctx=bumpCanvas.getContext('2d');const source=ctx.getImageData(0,0,size,size),bump=bctx.createImageData(size,size);for(let i=0;i<source.data.length;i+=4){const v=(source.data[i]*.3+source.data[i+1]*.59+source.data[i+2]*.11);bump.data[i]=bump.data[i+1]=bump.data[i+2]=v;bump.data[i+3]=255;}bctx.putImageData(bump,0,0);
   const bumpMap=new THREE.CanvasTexture(bumpCanvas);bumpMap.wrapS=bumpMap.wrapT=THREE.RepeatWrapping;bumpMap.repeat.copy(map.repeat);bumpMap.anisotropy=8;
-  const material=new THREE.MeshStandardMaterial({color:'#ffffff',map,bumpMap,bumpScale:kind==='metal'?.035:kind==='foliage'?.045:kind==='asphalt'?.12:.085,roughness,metalness});materialCache.set(key,material);return material;
+  const normalData=new Uint8Array(size*size*4),heightAt=(x,y)=>{const px=(y*size+x)*4;return bump.data[px]/255;},normalStrength=kind==='asphalt'?3.8:kind==='metal'?1.8:3.1;
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){const dx=(heightAt((x+1)%size,y)-heightAt((x+size-1)%size,y))*normalStrength,dy=(heightAt(x,(y+1)%size)-heightAt(x,(y+size-1)%size))*normalStrength,nx=-dx,ny=-dy,nz=1,len=Math.hypot(nx,ny,nz)||1,idx=(y*size+x)*4;normalData[idx]=Math.round((nx/len*.5+.5)*255);normalData[idx+1]=Math.round((ny/len*.5+.5)*255);normalData[idx+2]=Math.round((nz/len*.5+.5)*255);normalData[idx+3]=255;}
+  const normalMap=new THREE.DataTexture(normalData,size,size,THREE.RGBAFormat);normalMap.wrapS=normalMap.wrapT=THREE.RepeatWrapping;normalMap.repeat.copy(map.repeat);normalMap.needsUpdate=true;
+  const material=new THREE.MeshStandardMaterial({color:'#ffffff',map,bumpMap,normalMap,normalScale:new THREE.Vector2(.42,.42),bumpScale:kind==='metal'?.02:kind==='foliage'?.025:kind==='asphalt'?.055:.04,roughness,roughnessMap:bumpMap,metalness});materialCache.set(key,material);return material;
 }
 function box(w, h, d, material, x, y, z, group) {
   const key = [w, h, d].join('|');
