@@ -28,6 +28,36 @@ const glowMat = (color, roughness, metalness, emissive, intensity) => {
   if (!materialCache.has(key)) materialCache.set(key, new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive, emissiveIntensity: intensity }));
   return materialCache.get(key);
 };
+function detailedSurface(color,kind='concrete',seed=1,roughness=.82,metalness=0){
+  const key=[color,kind,seed,roughness,metalness].join('|');if(materialCache.has(key))return materialCache.get(key);
+  const size=512,canvas=document.createElement('canvas');canvas.width=canvas.height=size;const ctx=canvas.getContext('2d');ctx.fillStyle=color;ctx.fillRect(0,0,size,size);
+  let state=(seed>>>0)||1;const rand=()=>{state=(state*1664525+1013904223)>>>0;return state/4294967296;};
+  const img=ctx.getImageData(0,0,size,size),data=img.data;
+  for(let i=0;i<data.length;i+=4){const n=(rand()-.5)*(kind==='asphalt'?54:kind==='bark'?48:kind==='foliage'?68:kind==='metal'?25:42);data[i]=THREE.MathUtils.clamp(data[i]+n,0,255);data[i+1]=THREE.MathUtils.clamp(data[i+1]+n,0,255);data[i+2]=THREE.MathUtils.clamp(data[i+2]+n,0,255);}ctx.putImageData(img,0,0);
+  if(kind==='asphalt'){
+    for(let i=0;i<2600;i++){const x=rand()*size,y=rand()*size,r=.35+rand()*2.2;ctx.fillStyle=rand()>.5?'rgba(225,226,216,.12)':'rgba(5,10,14,.22)';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}
+    ctx.strokeStyle='rgba(8,12,15,.42)';ctx.lineWidth=1.5;for(let i=0;i<18;i++){let x=rand()*size,y=rand()*size;ctx.beginPath();ctx.moveTo(x,y);for(let k=0;k<5;k++){x+=(rand()-.5)*45;y+=rand()*28;ctx.lineTo(x,y);}ctx.stroke();}
+    ctx.fillStyle='rgba(205,210,204,.12)';for(let i=0;i<35;i++){ctx.fillRect(rand()*size,rand()*size,2+rand()*12,1);}
+  }else if(kind==='concrete'){
+    ctx.strokeStyle='rgba(17,25,30,.24)';ctx.lineWidth=2;for(let i=0;i<14;i++){const x=rand()*size,y=rand()*size;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+(rand()-.5)*100,y+(rand()-.5)*85);ctx.stroke();}
+    for(let i=0;i<160;i++){ctx.fillStyle=rand()>.5?'rgba(245,245,232,.16)':'rgba(10,16,20,.17)';ctx.fillRect(rand()*size,rand()*size,2+rand()*8,2+rand()*6);}
+    ctx.strokeStyle='rgba(12,20,26,.25)';ctx.lineWidth=3;for(let y=128;y<size;y+=128){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(size,y);ctx.stroke();}
+  }else if(kind==='wood'){
+    for(let i=0;i<95;i++){const y=rand()*size;ctx.strokeStyle=rand()>.5?'rgba(25,14,8,.2)':'rgba(235,190,125,.17)';ctx.lineWidth=.5+rand()*3;ctx.beginPath();ctx.moveTo(0,y);ctx.bezierCurveTo(130,y+(rand()-.5)*18,360,y+(rand()-.5)*18,size,y+(rand()-.5)*10);ctx.stroke();}
+    for(let i=0;i<18;i++){ctx.strokeStyle='rgba(25,16,10,.25)';ctx.beginPath();ctx.ellipse(rand()*size,rand()*size,4+rand()*18,2+rand()*7,rand(),0,Math.PI*2);ctx.stroke();}
+  }else if(kind==='bark'){
+    for(let i=0;i<180;i++){const x=rand()*size;ctx.strokeStyle=rand()>.5?'rgba(20,12,8,.3)':'rgba(205,155,105,.2)';ctx.lineWidth=1+rand()*5;ctx.beginPath();ctx.moveTo(x,0);ctx.bezierCurveTo(x+(rand()-.5)*15,150,x+(rand()-.5)*15,350,x+(rand()-.5)*20,size);ctx.stroke();}
+  }else if(kind==='foliage'){
+    for(let i=0;i<3000;i++){ctx.fillStyle=rand()>.48?'rgba(160,205,112,.2)':'rgba(8,35,20,.22)';ctx.beginPath();ctx.ellipse(rand()*size,rand()*size,1+rand()*5,1+rand()*9,rand()*Math.PI,0,Math.PI*2);ctx.fill();}
+  }else if(kind==='metal'){
+    ctx.strokeStyle='rgba(235,250,255,.16)';ctx.lineWidth=2;for(let y=0;y<size;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(size,y);ctx.stroke();}
+    ctx.fillStyle='rgba(0,0,0,.22)';for(let y=18;y<size;y+=64)for(let x=18;x<size;x+=64){ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();}
+  }
+  const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(kind==='bark'?1.2:kind==='asphalt'?3.4:2.2,kind==='bark'?2.8:2.2);map.anisotropy=8;
+  const bumpCanvas=document.createElement('canvas');bumpCanvas.width=bumpCanvas.height=size;const bctx=bumpCanvas.getContext('2d');const source=ctx.getImageData(0,0,size,size),bump=bctx.createImageData(size,size);for(let i=0;i<source.data.length;i+=4){const v=(source.data[i]*.3+source.data[i+1]*.59+source.data[i+2]*.11);bump.data[i]=bump.data[i+1]=bump.data[i+2]=v;bump.data[i+3]=255;}bctx.putImageData(bump,0,0);
+  const bumpMap=new THREE.CanvasTexture(bumpCanvas);bumpMap.wrapS=bumpMap.wrapT=THREE.RepeatWrapping;bumpMap.repeat.copy(map.repeat);bumpMap.anisotropy=8;
+  const material=new THREE.MeshStandardMaterial({color:'#ffffff',map,bumpMap,bumpScale:kind==='metal'?.035:kind==='foliage'?.045:kind==='asphalt'?.12:.085,roughness,metalness});materialCache.set(key,material);return material;
+}
 function box(w, h, d, material, x, y, z, group) {
   const key = [w, h, d].join('|');
   if (!geometryCache.has(key)) geometryCache.set(key, new THREE.BoxGeometry(w, h, d));
@@ -56,7 +86,7 @@ function flushBoxBatches(group) {
   batches.clear();
 }
 function makeBuilding(group,x,z,w,d,h,color,seed){
-  const wall=mat(color,.78,.18),dark=mat('#101a25',.42,.72),trim=mat('#34485a',.34,.8);
+  const wall=detailedSurface(color,'concrete',seed,.86,.08),dark=detailedSurface('#101a25','metal',seed+31,.42,.72),trim=detailedSurface('#34485a','metal',seed+32,.34,.8);
   const neonColors=['#12dfff','#ff3f9b','#a66bff','#ffb84d'],neon=neonColors[seed%neonColors.length];
   box(w,h,d,wall,x,h/2,z,group);box(w+.24,.22,d+.24,trim,x,h,z,group);box(w+.12,.12,d+.12,dark,x,.18,z,group);
   const floors=Math.max(2,Math.floor(h/2.45));
@@ -118,14 +148,14 @@ export async function createWorld(onProgress = () => {}) {
   const cyanLight=new THREE.PointLight('#12cfff',38,42,2);cyanLight.position.set(-7,5,-9);city.add(cyanLight);
   const pinkLight=new THREE.PointLight('#ff319c',34,38,2);pinkLight.position.set(8,5,8);city.add(pinkLight);
   const violetLight=new THREE.PointLight('#9a58ff',30,34,2);violetLight.position.set(-10,4,12);city.add(violetLight);
-  const asphalt = mat('#343a3d'), sidewalk = mat('#777b77'), lane = mat('#c2bda8');
+  const asphalt = detailedSurface('#343a3d','asphalt',11,.94,.02), sidewalk = detailedSurface('#777b77','concrete',12,.9,.02), lane = detailedSurface('#c2bda8','concrete',13,.82,.02);
   box(120, .35, 120, asphalt, 0, -.2, 0, city);
   box(18, .16, 110, asphalt, 0, -.015, 0, city); box(110, .16, 18, asphalt, 0, -.01, 0, city);
   box(4, .17, 110, sidewalk, -11, -.005, 0, city); box(4, .17, 110, sidewalk, 11, -.005, 0, city);
   box(110, .17, 4, sidewalk, 0, -.005, -11, city); box(110, .17, 4, sidewalk, 0, -.005, 11, city);
   for (let z = -48; z <= 48; z += 5) box(.12, .025, 2.1, lane, 0, .09, z, city);
   for (let x = -48; x <= 48; x += 5) box(2.1, .025, .12, lane, x, .09, 0, city);
-  const crosswalk = mat('#c9c7bc');
+  const crosswalk = detailedSurface('#c9c7bc','concrete',14,.78,.02);
   for (let i = -4; i <= 4; i++) {
     box(1.05, .035, 5, crosswalk, i * 1.55, .1, -8, city);
     box(5, .035, 1.05, crosswalk, 8, .1, i * 1.55, city);
@@ -149,7 +179,7 @@ export async function createWorld(onProgress = () => {}) {
       await yieldToUI();
     }
   }
-  const trunk = mat('#59483a'), leaves = mat('#435d4c'), bench = mat('#564b3e'), bin = mat('#34484a');
+  const trunk = detailedSurface('#59483a','bark',21,.96), leaves = detailedSurface('#435d4c','foliage',22,.94), bench = detailedSurface('#564b3e','wood',23,.88), bin = detailedSurface('#34484a','metal',24,.48,.58);
   for (const [x, z] of [[-13, -13], [13, -13], [-13, 13], [13, 13], [-29, 0], [29, 0], [0, 29], [0, -29]]) {
     const t = new THREE.Mesh(new THREE.CylinderGeometry(.18, .24, 2, 7), trunk);
     t.position.set(x, 1, z); t.castShadow = true; city.add(t);
@@ -168,7 +198,7 @@ export async function createWorld(onProgress = () => {}) {
   for (const [x, z] of [[-10, 3], [10, -3], [-23, -13], [23, 13]]) { box(.75, 1.15, .75, bin, x, .58, z, city); buildingColliders.push({ type: 'box', minX: x - .48, maxX: x + .48, minZ: z - .48, maxZ: z + .48 }); }
   for (let i = 0; i < 22; i++) {
     const a = i / 22 * Math.PI * 2, r = 65 + (i % 4) * 5, h = 16 + (i * 7 % 22);
-    box(7, h, 7, mat('#65777a'), Math.sin(a) * r, h / 2, Math.cos(a) * r, city);
+    box(7, h, 7, detailedSurface('#65777a','concrete',seed+300,.88,.12), Math.sin(a) * r, h / 2, Math.cos(a) * r, city);
     buildingColliders.push({ type: 'box', minX: Math.sin(a) * r - 3.5, maxX: Math.sin(a) * r + 3.5, minZ: Math.cos(a) * r - 3.5, maxZ: Math.cos(a) * r + 3.5 });
   }
   onProgress(78, '正在布置街灯、树木与街道设施…');
