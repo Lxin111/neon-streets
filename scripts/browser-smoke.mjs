@@ -57,12 +57,24 @@ try {
     const boss = { model: enemy.model, boss: true, bossType: 0, attack: 0, damageMultiplier: 1 };
     const delta = game.player.root.position.clone().sub(root.position);
     game.updateBossEnemy(boss, .016, delta, 5, 0);
-    const lifted = boss.stompTime > 0 && leg.rotation.x < 0;
+    const lifted = boss.stompTime > 0 && leg.rotation.x < 0 && boss.weakpointOpen;
     root.position.copy(original); leg.rotation.x = oldRotation; game.moveEnemyToward = oldMove;
     game.attachRealisticModel({ elite: true }); game.attachRealisticModel({ boss: true });
     return lifted;
   });
   if (!hulkStomp) throw new Error('Hulk did not lift its leg before the stomp attack.');
+  const bossPhaseTwo = await page.evaluate(() => {
+    const { game } = window.__NEON_STREETS_TEST__, enemy = game.enemies.find(e => !e.dead);
+    const root = enemy.model.root, original = root.position.clone(), scale = root.scale.clone(), player = game.player.root.position, oldMove = game.moveEnemyToward;
+    root.position.set(player.x, 0, player.z - 20); game.moveEnemyToward = (actor, vector) => actor.model.root.position.add(vector);
+    const boss = { model: enemy.model, boss: true, bossType: 2, hp: 45, maxHp: 100, attack: 99, damageMultiplier: 1 };
+    game.updateBossEnemy(boss, .016, player.clone().sub(root.position), 20, 0);
+    const enraged = boss.enraged && boss.phase === 2;
+    root.position.copy(original); root.scale.copy(scale); game.moveEnemyToward = oldMove;
+    return enraged;
+  });
+  if (!bossPhaseTwo) throw new Error('Boss did not enter phase two at half health.');
+
   console.log('PASS: Hulk leg-lift stomp telegraph and photogrammetry isolation guards');
 
 
