@@ -124,7 +124,6 @@ try {
 
 } catch (error) {
   if (browser) {
-    try { const pages = browser.contexts().flatMap(context => context.pages()); if (pages[0]) await pages[0].screenshot({ path: 'artifacts/failure.png', fullPage: true }); } catch {}
   }
   console.error(error);
   process.exitCode = 1;
