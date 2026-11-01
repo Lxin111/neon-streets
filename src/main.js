@@ -45,6 +45,7 @@ try {
  const detail=(error?.stack||'').split('\\n').slice(0,4).join(' | ');loadingTask.textContent='启动失败（'+startupStage+'）：'+(error?.message||String(error))+(detail?' · '+detail:'')+'。';
  throw error;
 }
+if(new URLSearchParams(location.search).get('test')==='1')window.__NEON_STREETS_TEST__={game,world};
 const syncModalPause=()=>{const modalOpen=[...document.querySelectorAll('.overlay')].some(el=>!el.classList.contains('hidden'));if(modalOpen){game.paused=true;game.keys={};game.mobile={x:0,y:0};game.setBlock(false);document.exitPointerLock?.();}else if(!game.gameOver){game.paused=false;game.clock.getDelta();}document.querySelector('#hud').dataset.paused=String(game.paused);};
 const modalObserver=new MutationObserver(syncModalPause);document.querySelectorAll('.overlay').forEach(el=>modalObserver.observe(el,{attributes:true,attributeFilter:['class']}));
 const hpBar=document.querySelector('#hpBar'),hpText=document.querySelector('#hpText'),xpBar=document.querySelector('#xpBar'),xpText=document.querySelector('#xpText'),enemyCount=document.querySelector('#enemyCount'),objective=document.querySelector('#objective'),toastEl=document.querySelector('#toast'),buffEl=document.querySelector('#buffStatus'),goldEl=document.querySelector('#goldCount'),chargeEl=document.querySelector('#chargeCount');
