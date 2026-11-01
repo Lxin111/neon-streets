@@ -100,9 +100,19 @@ try {
   if (await page.locator('#hud').getAttribute('data-paused') !== 'false') throw new Error('Game did not resume after closing character stats.');
   console.log('PASS: all tested modal screens pause and resume the game; environment settings persist');
   for (const [button, overlay] of [['#skillsBtn','#skillsOverlay'],['#questsBtn','#questsOverlay'],['#codexBtn','#codexOverlay'],['#saveBtn','#saveOverlay'],['#settingsBtn','#settingsOverlay']]) {
+    if (overlay === '#skillsOverlay') await page.evaluate(() => { window.__NEON_STREETS_TEST__.game.skillPoints = 1; });
     await page.locator(button).click();
     await page.locator(overlay + ':not(.hidden)').waitFor({ state: 'visible' });
     if (await page.locator('#hud').getAttribute('data-paused') !== 'true') throw new Error(overlay + ' did not pause the game.');
+    if (overlay === '#skillsOverlay') {
+      await page.locator('[data-skill="edge"]').click();
+      const unlocked = await page.evaluate(() => window.__NEON_STREETS_TEST__.game.unlockedSkills.includes('edge'));
+      if (!unlocked) throw new Error('Skill tree failed to unlock an available skill.');
+    }
+    if (overlay === '#questsOverlay') {
+      const missionRows = await page.locator('#questList .list-row').count();
+      if (missionRows < 13) throw new Error('Expected daily, story and bounty missions; found ' + missionRows);
+    }
     if (overlay === '#saveOverlay') {
       await page.locator('#saveNowBtn').click();
       const checkpoint = await page.evaluate(() => localStorage.getItem('ns_campaign_save'));
