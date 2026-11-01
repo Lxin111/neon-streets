@@ -219,7 +219,7 @@ export async function createWorld(onProgress = () => {}) {
     scene, camera, renderer, composer, city, buildingColliders, environment,
     resize() {
       camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
-      renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,matchMedia('(pointer: coarse)').matches?1.2:2));composer.setSize(innerWidth,innerHeight);
+      renderer.setSize(innerWidth,innerHeight);const quality=localStorage.getItem('ns_quality')||'high';renderer.setPixelRatio(quality==='performance'?.85:quality==='balanced'?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,matchMedia('(pointer: coarse)').matches?1.35:2));renderer.shadowMap.enabled=quality!=='performance';composer.setSize(innerWidth,innerHeight);
     }
   };
 }
