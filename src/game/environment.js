@@ -22,6 +22,8 @@ export class EnvironmentSystem {
     const snowGeo=new THREE.BufferGeometry();snowGeo.setAttribute('position',new THREE.BufferAttribute(this.snowPositions,3));
     this.snow=new THREE.Points(snowGeo,new THREE.PointsMaterial({color:'#eaf7ff',size:.085,transparent:true,opacity:.9,sizeAttenuation:true}));
     this.snow.frustumCulled=false;this.snow.visible=false;scene.add(this.snow);
+    const sunCanvas=document.createElement('canvas');sunCanvas.width=sunCanvas.height=256;const sunCtx=sunCanvas.getContext('2d');const sunGradient=sunCtx.createRadialGradient(128,128,18,128,128,126);sunGradient.addColorStop(0,'rgba(255,255,238,1)');sunGradient.addColorStop(.22,'rgba(255,226,145,.92)');sunGradient.addColorStop(.52,'rgba(255,174,70,.28)');sunGradient.addColorStop(1,'rgba(255,150,60,0)');sunCtx.fillStyle=sunGradient;sunCtx.fillRect(0,0,256,256);const sunTexture=new THREE.CanvasTexture(sunCanvas);sunTexture.colorSpace=THREE.SRGBColorSpace;
+    this.sunVisual=new THREE.Group();this.sunDisc=new THREE.Mesh(new THREE.SphereGeometry(2.15,32,24),new THREE.MeshBasicMaterial({color:'#fff0b3',map:null}));this.sunGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:sunTexture,color:'#ffd78b',transparent:true,opacity:.92,depthWrite:false,blending:THREE.AdditiveBlending}));this.sunGlow.scale.set(15,15,1);this.sunVisual.add(this.sunGlow,this.sunDisc);this.sunVisual.renderOrder=2;scene.add(this.sunVisual);
     this.apply();
   }
   resetRain(i,initial=false){
@@ -50,10 +52,12 @@ export class EnvironmentSystem {
     this.sun.position.set(Math.cos(angle)*34,Math.max(3,Math.sin(angle)*42),18);
     this.sun.intensity=.12+day*1.55;
     this.sun.color.set(this.weather==='snow'?'#dcecff':this.weather==='rain'||this.weather==='fog'?'#a9bac9':twilight>.25?'#ffbd88':'#b8d8ff');
+    this.sunVisual.visible=day>.04&&this.time>5&&this.time<20.2;this.sunDisc.material.color.set(twilight>.2?'#ffcf91':'#fff0b3');
     this.rain.visible=this.weather==='rain';this.snow.visible=this.weather==='snow';
     this.rain.material.opacity=this.weather==='rain'?.58:0;
   }
   update(dt,center){
+    if(this.sunVisual.visible){const direction=this.sun.position.clone().normalize();this.sunVisual.position.copy(this.camera.position).addScaledVector(direction,78);this.sunVisual.quaternion.copy(this.camera.quaternion);}
     if(this.weather==='rain'){
       for(let i=0;i<this.rainCount;i++){const n=i*6;this.rainPositions[n]+=dt*.7;this.rainPositions[n+1]-=dt*19;if(this.rainPositions[n+1]<0)this.resetRain(i);}
       this.rain.position.set(center?.x||0,0,center?.z||0);this.rain.geometry.attributes.position.needsUpdate=true;
@@ -62,5 +66,5 @@ export class EnvironmentSystem {
       this.snow.position.set(center?.x||0,0,center?.z||0);this.snow.geometry.attributes.position.needsUpdate=true;
     }
   }
-  dispose(){this.scene.remove(this.rain,this.snow);this.rain.geometry.dispose();this.rain.material.dispose();this.snow.geometry.dispose();this.snow.material.dispose();}
+  dispose(){this.scene.remove(this.rain,this.snow,this.sunVisual);this.sunDisc.geometry.dispose();this.sunDisc.material.dispose();this.sunGlow.material.map?.dispose();this.sunGlow.material.dispose();this.rain.geometry.dispose();this.rain.material.dispose();this.snow.geometry.dispose();this.snow.material.dispose();}
 }
