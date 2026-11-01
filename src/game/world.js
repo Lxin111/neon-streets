@@ -115,7 +115,7 @@ function makeBuilding(group,x,z,w,d,h,color,seed){
   box(w+.18,.055,.14,glowMat('#182d3d',.25,.7,neon,.9),x,h+.13,z+d/2,group);
 }
 function makeStreetLamp(group,x,z){
-  const metal=mat('#182a35',.32,.85),glow=new THREE.MeshStandardMaterial({color:'#b9f7ff',emissive:'#27dfff',emissiveIntensity:3.2});
+  const metal=detailedSurface('#182a35','metal',801,.32,.85),glow=new THREE.MeshStandardMaterial({color:'#b9f7ff',emissive:'#27dfff',emissiveIntensity:3.2});
   const pole=new THREE.Mesh(new THREE.CylinderGeometry(.055,.085,4.6,10),metal);
   pole.position.set(x,2.3,z);pole.castShadow=true;group.add(pole);
   box(.95,.09,.1,metal,x+.38,4.42,z,group);box(.42,.14,.3,glow,x+.76,4.3,z,group);
@@ -192,6 +192,18 @@ export async function createWorld(onProgress = () => {}) {
     buildingColliders.push({ type: 'circle', x, z, r: 1.12 });
   }
   for (const [x, z] of [[-9, -9], [9, -9], [-9, 9], [9, 9], [-20, 0], [20, 0], [0, 20], [0, -20]]) { makeStreetLamp(city, x, z); buildingColliders.push({ type: 'circle', x: x + .38, z, r: .48 }); }
+  // Weathered cast-iron manholes and storm drains add readable street-scale detail.
+  const manholeMat=detailedSurface('#4b5558','metal',811,.68,.72),manholeEdge=detailedSurface('#202a2e','metal',812,.46,.82);
+  for(const [x,z] of [[-4.8,-5.6],[4.8,5.6],[-5.4,4.2],[5.4,-4.2]]){
+    const cover=new THREE.Mesh(new THREE.CylinderGeometry(.58,.58,.055,32),manholeMat);cover.position.set(x,.085,z);cover.castShadow=true;cover.receiveShadow=true;city.add(cover);
+    const rim=new THREE.Mesh(new THREE.TorusGeometry(.59,.045,8,40),manholeEdge);rim.rotation.x=Math.PI/2;rim.position.set(x,.105,z);city.add(rim);
+    for(let k=0;k<12;k++){const a=k/12*Math.PI*2,slot=new THREE.Mesh(new THREE.BoxGeometry(.24,.012,.025),manholeEdge);slot.position.set(x+Math.cos(a)*.3,.116,z+Math.sin(a)*.3);slot.rotation.y=-a;city.add(slot);}
+  }
+  const drainMat=detailedSurface('#263238','metal',813,.5,.8);
+  for(const [x,z,rot] of [[-9,-2,0],[9,2,0],[-2,-9,Math.PI/2],[2,9,Math.PI/2]]){
+    const grate=new THREE.Mesh(new THREE.BoxGeometry(1.35,.045,.34),drainMat);grate.position.set(x,.09,z);grate.rotation.y=rot;grate.castShadow=true;city.add(grate);
+    for(let i=0;i<7;i++){const bar=new THREE.Mesh(new THREE.BoxGeometry(.035,.025,.3),manholeEdge);bar.position.set(x+(rot===0?(i-3)*.18:0),.12,z+(rot===Math.PI/2?(i-3)*.18:0));bar.rotation.y=rot;city.add(bar);}
+  }
   for (const [x, z] of [[-8, -12], [8, 12], [-18, 8], [18, -8]]) {
     box(2.2, .18, .65, bench, x, .62, z, city);
     box(.12, .65, .12, bench, x - .8, .32, z, city);
