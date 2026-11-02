@@ -177,7 +177,7 @@ try {
   if (!liveResponse?.ok()) throw new Error('Live GitHub Pages returned HTTP ' + liveResponse?.status() + ': ' + liveFailures.join(' | '));
   try { await livePage.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 90000 }); }
   catch (error) { const diagnostic = await livePage.evaluate(() => ({ readyState:document.readyState, loading:document.querySelector('#loading')?.innerText, canvasCount:document.querySelectorAll('#app canvas').length, hudClass:document.querySelector('#hud')?.className, scripts:[...document.scripts].map(s=>s.src), slowResources:performance.getEntriesByType('resource').filter(r=>r.duration>5000).map(r=>({name:r.name,duration:Math.round(r.duration)})).slice(-12) })).catch(() => ({})); const body = (await livePage.locator('body').innerText().catch(() => '')).slice(0, 700); throw new Error('Live site did not finish starting. ' + liveFailures.join(' | ') + ' BODY=' + body + ' DIAGNOSTIC=' + JSON.stringify(diagnostic) + ' :: ' + error.message); }
-  await livePage.locator('#app > canvas').waitFor({ state: 'visible', timeout: 15000 });
+  await livePage.locator('#app canvas:not(#miniMap)').waitFor({ state: 'visible', timeout: 15000 });
   if (liveFailures.length) throw new Error('Live site network/runtime failures:\\n' + liveFailures.join('\\n'));
   console.log('PASS: published GitHub Pages site starts and renders');
 
