@@ -92,6 +92,16 @@ function makeHulkBoss(scene){
  const muscle=(x,y,z,sx,sy,sz,material=skin,rot=0)=>part(new THREE.SphereGeometry(1,40,32),material,[x,y,z],[sx,sy,sz],[0,0,rot]);
  muscle(0,1.68,0,.77,.66,.39);muscle(-.34,1.78,-.31,.43,.29,.19,light);muscle(.34,1.78,-.31,.43,.29,.19,light);muscle(0,1.2,-.03,.5,.37,.31);
  for(let row=0;row<3;row++)for(const side of [-1,1])muscle(side*.19,1.43-row*.17,-.31,.17,.105,.085,row===1?light:skin);
+ // Stronger silhouette: neck, jaw, brow, separated pectorals and abdominal definition.
+ muscle(0,2.02,.015,.25,.3,.24,skin);
+ muscle(0,2.12,-.265,.27,.16,.12,light);
+ muscle(0,2.03,-.355,.09,.11,.075,shadow);
+ muscle(-.14,2.34,-.285,.16,.055,.07,hair,-.12);
+ muscle(.14,2.34,-.285,.16,.055,.07,hair,.12);
+ muscle(0,1.82,.29,.42,.16,.1,shadow);
+ muscle(-.38,1.92,-.34,.12,.19,.07,light,-.2);
+ muscle(.38,1.92,-.34,.12,.19,.07,light,.2);
+
  muscle(0,2.27,-.02,.34,.38,.31);muscle(0,2.48,-.03,.35,.18,.3,hair);muscle(-.16,2.25,-.28,.13,.09,.1,shadow);muscle(.16,2.25,-.28,.13,.09,.1,shadow);part(new THREE.BoxGeometry(.4,.07,.08),hair,[0,2.36,-.3]);
  for(const side of [-1,1]){part(new THREE.SphereGeometry(.035,16,12),eye,[side*.105,2.25,-.32]);muscle(side*.82,1.67,0,.35,.43,.34,light);muscle(side*1.03,1.23,-.02,.27,.48,.25);muscle(side*1.1,.79,-.01,.2,.24,.2,light);muscle(side*.28,.62,0,.25,.48,.27);muscle(side*.28,.27,-.01,.2,.23,.22,light);}
  part(new THREE.CapsuleGeometry(.53,.32,8,16),shorts,[0,.63,0],[1,.75,.8]);part(new THREE.BoxGeometry(.12,.22,.1),shadow,[0,.47,-.29]);
