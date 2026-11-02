@@ -581,8 +581,9 @@ initMinimap(){
   const ratio=e.hp/Math.max(1,e.maxHp);
   if(ratio<=.5&&!e.enraged){e.enraged=true;e.phase=2;e.attack=Math.min(e.attack,.65);if(e.bossType!==0)root.scale.multiplyScalar(1.04);for(const light of rig.bossLights||[])light.intensity*=1.35;this.onToast?.('BOSS进入第二阶段！攻击更加猛烈，弱点暴露窗口缩短！');}
   const playerSpeed=(this.buff==='狂暴'?7.4:5.2)*(this.keys.ShiftLeft||this.keys.ShiftRight?1.45:1)*(this.poisonTime>0?.5:1)*(1+(this.moveBonus||0)+(this.skillMoveBonus||0)),bossSpeed=playerSpeed*.75;
-  const stop=e.spider?4.8:2.8,toward=delta.clone().setY(0);
-  if(toward.lengthSq()>.0001){toward.normalize();if(dist>stop+.12)this.moveEnemyToward(e,toward.clone().multiplyScalar(Math.min(bossSpeed*dt,dist-stop)),e.spider?1.35:e.bossType===0?1.05:.95);else{const tangent=new THREE.Vector3(-toward.z,0,toward.x).multiplyScalar((Math.sin(phase*.7)>=0?1:-1)*bossSpeed*dt);this.moveEnemyToward(e,tangent,e.spider?1.35:.95);}}
+  const stop=e.spider?4.8:e.bossType===0?3.8:2.8,toward=delta.clone().setY(0);
+  // Boss holds its attack distance instead of orbiting and reversing around the player.
+  if(toward.lengthSq()>.0001&&dist>stop+.08){toward.normalize();this.moveEnemyToward(e,toward.multiplyScalar(Math.min(bossSpeed*dt,dist-stop)),e.spider?1.35:e.bossType===0?1.05:.95);}
   rig.anim=(rig.anim||0)+dt*(dist>stop?5.2:2.2);const stride=Math.sin(rig.anim)*.32;if(rig.legL)rig.legL.rotation.x=stride;if(rig.legR)rig.legR.rotation.x=-stride;
   if(rig.armL)rig.armL.rotation.x=THREE.MathUtils.damp(rig.armL.rotation.x,Math.sin(phase*1.6)*.08,4,dt);if(rig.armR)rig.armR.rotation.x=THREE.MathUtils.damp(rig.armR.rotation.x,Math.sin(phase*1.6+1)*.08,4,dt);
   if(e.spider&&rig.legs)for(const leg of rig.legs){const a=leg.userData.phase||0;leg.rotation.z=Math.sin(phase*4+a)*.13;leg.rotation.x=Math.cos(phase*4+a)*.08;}
