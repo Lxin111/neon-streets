@@ -5,6 +5,8 @@ const loading=document.querySelector('#loading');
 const loadingBar=document.querySelector('#loadingBar');
 const loadingPercent=document.querySelector('#loadingPercent');
 const loadingTask=document.querySelector('#loadingTask');
+const gameVersion=document.querySelector('#gameVersion');
+fetch(`${import.meta.env.BASE_URL}version.txt`,{cache:'no-store'}).then(response=>{if(!response.ok)throw new Error('version unavailable');return response.text();}).then(version=>{const value=version.trim();if(/^\d+\.\d+\.\d+\.\d+$/.test(value))gameVersion.textContent=value;}).catch(()=>{});
 function setLoadingProgress(value,task){
   const percent=Math.max(0,Math.min(100,value));
   loadingBar.style.width=percent.toFixed(2)+'%';
