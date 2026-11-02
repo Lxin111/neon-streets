@@ -5,6 +5,8 @@ export class GameAudio {
     this.timer = null;
     this.step = 0;
     this.enabled = localStorage.getItem('ns_music_enabled') !== 'off';
+    const savedVolume = Number(localStorage.getItem('ns_master_volume') ?? 72);
+    this.volume = Number.isFinite(savedVolume) ? Math.max(0, Math.min(100, savedVolume)) : 72;
   }
 
   unlock() {
@@ -14,7 +16,7 @@ export class GameAudio {
     if (!this.ctx) {
       this.ctx = new AudioCtor();
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.72;
+      this.master.gain.value = this.volume / 100;
       this.master.connect(this.ctx.destination);
     }
     if (this.ctx.state === 'suspended') this.ctx.resume();
@@ -93,6 +95,14 @@ export class GameAudio {
       if (beat === 0 || beat === 8) this.tone(146.83, .42, 'sine', .025, 110);
       this.step++;
     }, 250);
+  }
+
+  setVolume(value) {
+    const next = Number(value);
+    this.volume = Number.isFinite(next) ? Math.max(0, Math.min(100, next)) : 72;
+    localStorage.setItem('ns_master_volume', String(this.volume));
+    if (this.master && this.ctx) this.master.gain.setTargetAtTime(this.volume / 100, this.ctx.currentTime, .035);
+    return this.volume;
   }
 
   toggleMusic() {
