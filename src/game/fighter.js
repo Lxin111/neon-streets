@@ -111,6 +111,28 @@ function hulkDiagnosticCode(code,detail={}){
  try{const key='neon_streets_hulk_diagnostics';const list=JSON.parse(localStorage.getItem(key)||'[]');list.push(entry);localStorage.setItem(key,JSON.stringify(list.slice(-40)));}catch{}
  window.__HULK_DIAGNOSTICS__=window.__HULK_DIAGNOSTICS__||[];window.__HULK_DIAGNOSTICS__.push(entry);
  console.error('[HULK-DIAG]['+code+']',entry);
+ try{const b=document.getElementById('hulkDiagnosticCopy');if(b)b.style.display='block';}catch{}
+}
+if(typeof window!=='undefined'&&typeof document!=='undefined'){
+ const installHulkDiagnosticButton=()=>{
+  if(document.getElementById('hulkDiagnosticCopy'))return;
+  const button=document.createElement('button');button.id='hulkDiagnosticCopy';button.type='button';button.textContent='复制绿巨人诊断';button.title='绿巨人不显示时，点击复制错误报告发给 ChatGPT';
+  button.style.cssText='position:fixed;right:12px;bottom:12px;z-index:99999;padding:10px 13px;border:1px solid #6ff4ff;border-radius:8px;background:#101c26;color:#e9fbff;font:12px sans-serif;box-shadow:0 2px 12px #0009;display:none';
+  button.addEventListener('click',async()=>{
+   let entries=[];try{entries=JSON.parse(localStorage.getItem('neon_streets_hulk_diagnostics')||'[]');}catch{}
+   const report={title:'NEON STREETS Hulk Diagnostic',generatedAt:new Date().toISOString(),page:location.href,userAgent:navigator.userAgent,version:document.querySelector('#gameVersion')?.textContent||'unknown',entries};
+   const output=JSON.stringify(report,null,2);
+   try{await navigator.clipboard.writeText(output);button.textContent='已复制，请发给 ChatGPT';}
+   catch{window.prompt('复制下面的绿巨人诊断报告：',output);button.textContent='诊断报告已打开';}
+   setTimeout(()=>button.textContent='复制绿巨人诊断',3500);
+  });
+  document.body.appendChild(button);
+ };
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installHulkDiagnosticButton,{once:true});else installHulkDiagnosticButton();
+ window.addEventListener('storage',event=>{if(event.key==='neon_streets_hulk_diagnostics'){const b=document.getElementById('hulkDiagnosticCopy');if(b)b.style.display='block';}});
+ const showButton=()=>{const b=document.getElementById('hulkDiagnosticCopy');if(b)b.style.display='block';};
+ window.__HULK_DIAGNOSTICS__=window.__HULK_DIAGNOSTICS__||[];
+ window.__showHulkDiagnosticButton=showButton;
 }
 function hulkSnapshot(boss,stage='runtime'){
  const root=boss?.model?.root||boss?.root;
