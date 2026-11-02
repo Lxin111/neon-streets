@@ -101,8 +101,9 @@ function makeEliteSuit(scene,seed=0){
 function makeHulkBoss(scene){
  const root=new THREE.Group();scene.add(root);
  const skin=texturedMat('#4e963c','skin',91,.7),light=texturedMat('#70b65a','skin',92,.64),shadow=mat('#28552a',.88),shorts=texturedMat('#35264b','fabric',93,.88),hair=mat('#25231f',.95),eye=mat('#f0e5c8',.35),crease=mat('#244b25',.95);
+ for(const material of [skin,light,shadow,shorts,hair,eye,crease]){material.side=THREE.DoubleSide;material.needsUpdate=true;}
  // Sculpted loft meshes: continuous changing cross-sections replace the old stack of primitive balls.
- const loft=(profile,material,segments=40)=>{const g=organicGeometry(profile,segments);const m=new THREE.Mesh(g,material);m.castShadow=true;m.receiveShadow=true;return m;};
+ const loft=(profile,material,segments=40)=>{const g=organicGeometry(profile,segments);g.computeBoundingBox();g.computeBoundingSphere();const m=new THREE.Mesh(g,material);m.castShadow=true;m.receiveShadow=true;m.frustumCulled=false;m.visible=true;return m;};
  const add=(mesh,parent=root,pos=[0,0,0],rot=null)=>{mesh.position.set(...pos);if(rot)mesh.rotation.set(...rot);parent.add(mesh);return mesh;};
  const shape=(profile,material,parent,pos,rot)=>add(loft(profile,material),parent,pos,rot);
  // Wide trapezius, deep chest, narrow waist and powerful pelvis form one connected torso.
@@ -154,7 +155,7 @@ function makeHulkBoss(scene){
   shape([[-1.27,.12,.12],[-1.36,.16,.14],[-1.43,.2,.17]],skin,g);
   const foot=new THREE.Mesh(new THREE.BoxGeometry(.38,.2,.58),skin);add(foot,g,[0,-1.48,-.13]);
  }
- return {root,armL,armR,legL,legR,anim:0,isEnemy:true,bossVisual:'hulk'};
+ root.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;o.material.side=THREE.DoubleSide;o.material.needsUpdate=true;o.geometry.computeBoundingBox();o.geometry.computeBoundingSphere();}});root.visible=true;return {root,armL,armR,legL,legR,anim:0,isEnemy:true,bossVisual:'hulk'};
 }
 function makeOtherBoss(scene,type){
  const root=new THREE.Group();scene.add(root);const stone=type===2,base=stone?texturedMat('#667b89','stone',202,.94,.18):texturedMat('#211c2e','fabric',303,.68,.55),trim=mat(stone?'#a8c2ce':'#9a55d9',.28,.82),glow=new THREE.MeshStandardMaterial({color:stone?'#6bcfff':'#bd68ff',emissive:stone?'#2589c8':'#7b24d1',emissiveIntensity:1.8,metalness:.4,roughness:.2});
