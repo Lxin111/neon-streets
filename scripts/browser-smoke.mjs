@@ -183,7 +183,7 @@ try {
 
 } catch (error) {
   if (page) { try { await page.screenshot({ path: 'artifacts/browser-failure.png', fullPage: true }); } catch {} }
-  if (livePage) { try { await livePage.screenshot({ path: 'artifacts/live-site-failure.png', fullPage: true }); } catch {} }
+  if (livePage) { try { await livePage.screenshot({ path: 'artifacts/live-site-failure.png', fullPage: false, timeout: 10000 }); } catch {} }
   console.error(error);
   if (pageErrors.length) console.error('PAGE_ERRORS=' + pageErrors.join('\n'));
   if (consoleErrors.length) console.error('CONSOLE_ERRORS=' + consoleErrors.join('\n'));
