@@ -76,15 +76,15 @@ function makeFighter(scene,isEnemy=false,index=0){
 }
 
 function proceduralTexture(base,kind='fabric',seed=1){
- const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const ctx=canvas.getContext('2d');ctx.fillStyle=base;ctx.fillRect(0,0,256,256);
+ const size=kind==='skin'?1024:512,canvas=document.createElement('canvas');canvas.width=canvas.height=size;const ctx=canvas.getContext('2d');ctx.fillStyle=base;ctx.fillRect(0,0,size,size);
  let n=(seed>>>0)||1;const rand=()=>{n=(n*1664525+1013904223)>>>0;return n/4294967296;};
- const image=ctx.getImageData(0,0,256,256),d=image.data;for(let i=0;i<d.length;i+=4){const v=(rand()-.5)*(kind==='skin'?22:kind==='stone'?38:18);d[i]=THREE.MathUtils.clamp(d[i]+v,0,255);d[i+1]=THREE.MathUtils.clamp(d[i+1]+v,0,255);d[i+2]=THREE.MathUtils.clamp(d[i+2]+v,0,255);}ctx.putImageData(image,0,0);
+ const image=ctx.getImageData(0,0,size,size),d=image.data;for(let i=0;i<d.length;i+=4){const v=(rand()-.5)*(kind==='skin'?22:kind==='stone'?38:18);d[i]=THREE.MathUtils.clamp(d[i]+v,0,255);d[i+1]=THREE.MathUtils.clamp(d[i+1]+v,0,255);d[i+2]=THREE.MathUtils.clamp(d[i+2]+v,0,255);}ctx.putImageData(image,0,0);
  if(kind==='fabric'){ctx.globalAlpha=.13;ctx.strokeStyle='#fff';for(let y=0;y<256;y+=4){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(256,y);ctx.stroke();}ctx.globalAlpha=1;}
- if(kind==='skin'){ctx.globalAlpha=.13;for(let i=0;i<2200;i++){ctx.fillStyle=rand()>.5?'#d5efbd':'#183d20';ctx.beginPath();ctx.arc(rand()*256,rand()*256,rand()*1.7,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;}
+ if(kind==='skin'){ctx.globalAlpha=.11;for(let i=0;i<18000;i++){ctx.fillStyle=rand()>.52?'#d5efbd':'#183d20';ctx.beginPath();ctx.ellipse(rand()*size,rand()*size,.35+rand()*1.5,.45+rand()*2,rand()*Math.PI,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=.08;for(let i=0;i<260;i++){const x=rand()*size,y=rand()*size;ctx.strokeStyle=rand()>.5?'#b7d98c':'#173b1e';ctx.lineWidth=.5+rand()*1.4;ctx.beginPath();ctx.moveTo(x,y);ctx.bezierCurveTo(x+rand()*12,y+rand()*5,x-rand()*12,y+rand()*12,x+(rand()-.5)*20,y+(rand()-.5)*16);ctx.stroke();}ctx.globalAlpha=1;}
  if(kind==='stone'){ctx.globalAlpha=.35;ctx.strokeStyle='#15191c';for(let i=0;i<48;i++){const x=rand()*256,y=rand()*256;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+(rand()-.5)*38,y+(rand()-.5)*48);ctx.stroke();}ctx.globalAlpha=1;}
- const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.anisotropy=4;return tex;
+ const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.anisotropy=8;return tex;
 }
-function texturedMat(color,kind,seed,roughness=.72,metalness=0){return new THREE.MeshStandardMaterial({color,map:proceduralTexture(color,kind,seed),roughness,metalness});}
+function texturedMat(color,kind,seed,roughness=.72,metalness=0){const map=proceduralTexture(color,kind,seed),bump=kind==='skin'?map.clone():null;if(bump){bump.colorSpace=THREE.NoColorSpace;bump.needsUpdate=true;}return new THREE.MeshStandardMaterial({color,map,bumpMap:bump,bumpScale:kind==='skin'?.018:.025,roughness,metalness});}
 function makeEliteSuit(scene,seed=0){
  const root=new THREE.Group();scene.add(root);const skin=texturedMat('#bd8e70','skin',seed+1,.82),suit=texturedMat(seed%2?'#252b35':'#171d27','fabric',seed+2,.88),pants=texturedMat('#171d27','fabric',seed+3,.9),shirt=texturedMat('#e4e5df','fabric',seed+4,.78),tie=mat(seed%2?'#6d1e2c':'#263f66',.72),shoe=mat('#111318',.3,.12),gold=mat('#b89a5b',.3,.72);
  const part=(geo,material,pos,scale,rot)=>{const m=new THREE.Mesh(geo,material);m.position.set(...pos);if(scale)m.scale.set(...scale);if(rot)m.rotation.set(...rot);m.castShadow=true;m.receiveShadow=true;root.add(m);return m;};
@@ -102,15 +102,7 @@ function makeHulkBoss(scene){
  const root=new THREE.Group();scene.add(root);
  const skin=texturedMat('#4e963c','skin',91,.7),light=texturedMat('#70b65a','skin',92,.64),shadow=mat('#28552a',.88),shorts=texturedMat('#35264b','fabric',93,.88),hair=mat('#25231f',.95),eye=mat('#f0e5c8',.35),crease=mat('#244b25',.95);
  // Sculpted loft meshes: continuous changing cross-sections replace the old stack of primitive balls.
- const loft=(profile,material,segments=32)=>{
-  const vertices=[],indices=[];
-  for(let j=0;j<profile.length;j++){const [y,rx,rz,cx=0,cz=0]=profile[j];
-   for(let i=0;i<=segments;i++){const a=i/segments*Math.PI*2;vertices.push(cx+Math.cos(a)*rx,y,cz+Math.sin(a)*rz);}
-  }
-  for(let j=0;j<profile.length-1;j++)for(let i=0;i<segments;i++){const a=j*(segments+1)+i,b=a+segments+1;indices.push(a,b,a+1,b,b+1,a+1);}
-  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();
-  const m=new THREE.Mesh(g,material);m.castShadow=true;m.receiveShadow=true;return m;
- };
+ const loft=(profile,material,segments=40)=>{const g=organicGeometry(profile,segments);const m=new THREE.Mesh(g,material);m.castShadow=true;m.receiveShadow=true;return m;};
  const add=(mesh,parent=root,pos=[0,0,0],rot=null)=>{mesh.position.set(...pos);if(rot)mesh.rotation.set(...rot);parent.add(mesh);return mesh;};
  const shape=(profile,material,parent,pos,rot)=>add(loft(profile,material),parent,pos,rot);
  // Wide trapezius, deep chest, narrow waist and powerful pelvis form one connected torso.
@@ -126,15 +118,23 @@ function makeHulkBoss(scene){
  shape([[2.18,.17,.16],[2.23,.25,.21],[2.38,.29,.24],[2.57,.27,.23],[2.7,.18,.17],[2.74,.08,.1]],light,root);
  shape([[2.2,.16,.07,0,-.17],[2.27,.24,.055,0,-.19],[2.34,.21,.045,0,-.2]],skin,root);
  for(const side of [-1,1]){
-  const brow= new THREE.Mesh(new THREE.BoxGeometry(.22,.075,.09),hair);add(brow,root,[side*.125,2.49,-.215],[0,0,side*-.12]);
-  const eyeMesh=new THREE.Mesh(new THREE.BoxGeometry(.105,.035,.025),eye);add(eyeMesh,root,[side*.12,2.445,-.238]);
+  shape([[2.42,.035,.045,side*.115,-.205],[2.47,.13,.075,side*.125,-.205],[2.52,.17,.075,side*.12,-.18]],hair,root);
+  const eyeSocket=new THREE.Mesh(new THREE.SphereGeometry(.075,20,14),shadow);eyeSocket.scale.set(1.25,.62,.42);add(eyeSocket,root,[side*.12,2.445,-.229]);
+  const eyeMesh=new THREE.Mesh(new THREE.SphereGeometry(.047,20,14),eye);eyeMesh.scale.set(1.25,.72,.45);add(eyeMesh,root,[side*.12,2.445,-.254]);
+  const iris=new THREE.Mesh(new THREE.SphereGeometry(.021,16,12),mat('#6c8a48',.32));add(iris,root,[side*.12,2.444,-.273]);
+  const pupil=new THREE.Mesh(new THREE.SphereGeometry(.011,12,10),mat('#10140e',.2));add(pupil,root,[side*.12,2.444,-.284]);
   shape([[2.34,.018,.025,side*.25,-.01],[2.43,.07,.07,side*.29,0],[2.51,.025,.035,side*.26,0]],skin,root);
+  shape([[2.27,.025,.035,side*.23,-.17],[2.32,.065,.055,side*.27,-.13],[2.37,.035,.035,side*.25,-.1]],skin,root);
+  const ear=new THREE.Mesh(new THREE.SphereGeometry(.085,18,14),skin);ear.scale.set(.65,1.15,.55);add(ear,root,[side*.285,2.37,-.005]);
+  const nostril=new THREE.Mesh(new THREE.SphereGeometry(.018,10,8),shadow);nostril.scale.set(1,.55,.6);add(nostril,root,[side*.045,2.31,-.264]);
  }
  shape([[2.49,.02,.025,0,-.22],[2.4,.045,.045,0,-.245],[2.35,.07,.055,0,-.23]],light,root);
  shape([[2.2,.03,.025],[2.22,.11,.045],[2.24,.13,.04]],shadow,root);
+ shape([[2.285,.018,.018],[2.295,.095,.028],[2.305,.12,.025]],shadow,root);
+ shape([[2.26,.018,.018],[2.27,.075,.025],[2.28,.09,.02]],light,root);
  // Short dark messy hair cap and side locks.
  shape([[2.58,.25,.21],[2.67,.29,.24],[2.75,.24,.2],[2.79,.12,.13]],hair,root);
- for(const side of [-1,1])shape([[2.48,.035,.05,side*.25,0],[2.58,.07,.08,side*.26,0],[2.66,.035,.05,side*.23,0]],hair,root);
+ for(const side of [-1,1]){shape([[2.48,.035,.05,side*.25,0],[2.58,.07,.08,side*.26,0],[2.66,.035,.05,side*.23,0]],hair,root);const lock=new THREE.Mesh(new THREE.ConeGeometry(.075,.22,7),hair);add(lock,root,[side*.19,2.7,-.12],[0,0,side*.45]);}
  // Purple torn shorts with a shaped waistband and separate leg openings.
  shape([[.43,.34,.27],[.5,.48,.32],[.72,.5,.32],[.88,.43,.29],[.94,.36,.26]],shorts,root);
  shape([[.87,.38,.275],[.9,.4,.29],[.94,.36,.27]],shadow,root);
