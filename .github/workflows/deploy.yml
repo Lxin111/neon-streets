@@ -20,79 +20,22 @@ jobs:
         run: |
           set -e
           mkdir -p public
-          if [ ! -f public/version.txt ]; then echo '0.0.0.1' > public/version.txt; fi
-          current=$(tr -d '\\r\\n' < public/version.txt)
-          if ! echo "$current" | grep -Eq '^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Prepare official photogrammetry character archive
-        run: |
-          if [ -f public/models/nathan-photogrammetry.glb ]; then
-            echo "Using committed Renderpeople scan asset."
-            exit 0
-          fi
-          mkdir -p /tmp/renderpeople-nathan
-          curl --fail --location --retry 3 --retry-delay 2 "https://renderpeople.com/sample/free/renderpeople_free_animated_people_FBX.zip" --output /tmp/renderpeople-animated.zip
-          unzip -p /tmp/renderpeople-animated.zip rp_nathan_animated_003_walking_FBX.zip > /tmp/renderpeople-nathan.zip
-      - name: Convert and commit scanned Renderpeople character
-        run: |
-          if [ -f public/models/nathan-photogrammetry.glb ]; then
-            echo "Scanned model is already in the repository."
-            exit 0
-          fi
-          sudo apt-get update
-          sudo apt-get install -y blender python3-numpy
-          mkdir -p /tmp/renderpeople-nathan public/models
           python3 - <<'PY'
-          import os, zipfile
-          source = "/tmp/renderpeople-nathan.zip"
-          target = "/tmp/renderpeople-nathan"
-          os.makedirs(target, exist_ok=True)
-          with zipfile.ZipFile(source) as archive:
-              for item in archive.infolist():
-                  name = item.filename.replace("\\", "/")
-                  base = os.path.basename(name)
-                  if not base or not base.lower().endswith((".fbx", ".jpg", ".png")):
-                      continue
-                  destination = os.path.join(target, base) if base.lower().endswith(".fbx") else os.path.join(target, "tex", base)
-                  os.makedirs(os.path.dirname(destination), exist_ok=True)
-                  with archive.open(item) as src, open(destination, "wb") as dst:
-                      dst.write(src.read())
+          from pathlib import Path
+          p = Path("public/version.txt")
+          current = p.read_text().strip() if p.exists() else "0.0.0.1"
+          parts = current.split(".")
+          if len(parts) != 4 or not all(part.isdigit() for part in parts):
+              raise SystemExit(f"Invalid game version: {current}")
+          parts[-1] = str(int(parts[-1]) + 1)
+          version = ".".join(parts)
+          p.write_text(version + "\n")
+          print("Game version:", version)
           PY
-          blender --background --python scripts/convert_renderpeople.py -- /tmp/renderpeople-nathan/rp_nathan_animated_003_walking.fbx public/models/nathan-photogrammetry.glb
-          test "$(stat -c%s public/models/nathan-photogrammetry.glb)" -gt 10000000
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/models/nathan-photogrammetry.glb
-          git commit -m "Add optimized Renderpeople photogrammetry character"
-          git push origin HEAD:main
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-      - name: Build
-        run: npm run build
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4; then echo "Invalid version: $current"; exit 1; fi
-          prefix=${current%.*}
-          patch=${current##*.}
-          next=$((patch + 1))
-          echo "$prefix.$next" > public/version.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/version.txt
-          git commit -m "chore: bump game version to $prefix.$next [version-bump]"
+          git commit -m "chore: bump game version [version-bump]"
           git push origin HEAD:main
       - name: Setup Node
         uses: actions/setup-node@v4
