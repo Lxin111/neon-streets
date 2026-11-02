@@ -117,7 +117,7 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'){
  const installHulkDiagnosticButton=()=>{
   if(document.getElementById('hulkDiagnosticCopy'))return;
   const button=document.createElement('button');button.id='hulkDiagnosticCopy';button.type='button';button.textContent='复制绿巨人诊断';button.title='绿巨人不显示时，点击复制错误报告发给 ChatGPT';
-  button.style.cssText='position:fixed;right:12px;bottom:12px;z-index:99999;padding:10px 13px;border:1px solid #6ff4ff;border-radius:8px;background:#101c26;color:#e9fbff;font:12px sans-serif;box-shadow:0 2px 12px #0009;display:none';
+  button.style.cssText='position:fixed;right:12px;bottom:12px;z-index:99999;padding:10px 13px;border:1px solid #6ff4ff;border-radius:8px;background:#101c26;color:#e9fbff;font:12px sans-serif;box-shadow:0 2px 12px #0009;display:block';
   button.addEventListener('click',async()=>{
    let entries=[];try{entries=JSON.parse(localStorage.getItem('neon_streets_hulk_diagnostics')||'[]');}catch{}
    const report={title:'NEON STREETS Hulk Diagnostic',generatedAt:new Date().toISOString(),page:location.href,userAgent:navigator.userAgent,version:document.querySelector('#gameVersion')?.textContent||'unknown',entries};
