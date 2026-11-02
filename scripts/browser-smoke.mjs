@@ -35,6 +35,24 @@ try {
   const restoreFeedback = await page.locator('#restoreDistrictStatus').textContent();
   if (!restoreFeedback || !restoreFeedback.includes('无法回档')) throw new Error('Specified district restore button did not respond: ' + restoreFeedback);
   console.log('PASS: specified district restore button responds with validation feedback');
+  const backfillResult = await page.evaluate(() => {
+    const { game } = window.__NEON_STREETS_TEST__;
+    const oldHistory = localStorage.getItem('ns_campaign_history');
+    const oldMax = localStorage.getItem('ns_campaign_max_district');
+    const oldSave = localStorage.getItem('ns_campaign_save');
+    game.maxDistrictReached = 6;
+    localStorage.setItem('ns_campaign_max_district', '6');
+    localStorage.removeItem('ns_campaign_history');
+    const entry = game.ensureDistrictHistorySave(1);
+    const restored = !!entry && game.restoreHistorySave(entry.id);
+    const saved = JSON.parse(localStorage.getItem('ns_campaign_save') || 'null');
+    localStorage.setItem('ns_campaign_history', oldHistory ?? '[]');
+    if (oldMax === null) localStorage.removeItem('ns_campaign_max_district'); else localStorage.setItem('ns_campaign_max_district', oldMax);
+    if (oldSave === null) localStorage.removeItem('ns_campaign_save'); else localStorage.setItem('ns_campaign_save', oldSave);
+    return { created: !!entry, restored, district: saved?.districtNumber, max: saved?.maxDistrictReached };
+  });
+  if (!backfillResult.created || !backfillResult.restored || backfillResult.district !== 1 || backfillResult.max !== 6) throw new Error('Unlocked district backfill failed: ' + JSON.stringify(backfillResult));
+  console.log('PASS: missing first-district checkpoint can be backfilled without unlocking new districts');
   await page.locator('#saveOverlay [data-close]').click();
   await page.locator('#miniMapPanel').waitFor({ state: 'visible' });
   const radarSize = await page.locator('#miniMap').evaluate(canvas => ({ width: canvas.width, height: canvas.height, context: !!canvas.getContext('2d') }));
