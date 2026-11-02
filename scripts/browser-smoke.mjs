@@ -28,6 +28,14 @@ try {
   if (requiredPbrKinds.some(kind => !pbrKinds.includes(kind))) throw new Error('Missing scanned PBR material sets: ' + requiredPbrKinds.filter(kind => !pbrKinds.includes(kind)).join(', '));
   console.log('PASS: scanned CC0 PBR maps loaded for asphalt, concrete, brick, wood, bark and metal');
   console.log('PASS: desktop game startup and canvas render');
+  await page.locator('#saveBtn').click();
+  await page.locator('#saveOverlay:not(.hidden)').waitFor({ state: 'visible' });
+  await page.locator('#historyDistrictInput').fill('999');
+  await page.locator('#restoreDistrictBtn').click();
+  const restoreFeedback = await page.locator('#restoreDistrictStatus').textContent();
+  if (!restoreFeedback || !restoreFeedback.includes('无法回档')) throw new Error('Specified district restore button did not respond: ' + restoreFeedback);
+  console.log('PASS: specified district restore button responds with validation feedback');
+  await page.locator('#saveOverlay [data-close]').click();
   await page.locator('#miniMapPanel').waitFor({ state: 'visible' });
   const radarSize = await page.locator('#miniMap').evaluate(canvas => ({ width: canvas.width, height: canvas.height, context: !!canvas.getContext('2d') }));
   if (radarSize.width !== 180 || radarSize.height !== 180 || !radarSize.context) throw new Error('Tactical radar canvas did not initialize.');
