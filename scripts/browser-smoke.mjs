@@ -175,7 +175,9 @@ try {
   livePage.on('response', response => { if (response.status() >= 400) liveFailures.push(response.status() + ' ' + response.url()); });
   livePage.on('pageerror', error => liveFailures.push('PAGE ERROR: ' + (error.stack || error.message)));
   livePage.on('console', message => { if (message.type() === 'error') liveFailures.push('CONSOLE ERROR: ' + message.text()); });
-  const liveResponse = await livePage.goto('https://lxin111.github.io/neon-streets/', { waitUntil: 'domcontentloaded', timeout: 90000 });
+  const liveUrl = 'https://lxin111.github.io/neon-streets/?smoke=' + (process.env.GITHUB_SHA || Date.now());
+  await livePage.setExtraHTTPHeaders({ 'Cache-Control': 'no-cache' });
+  const liveResponse = await livePage.goto(liveUrl, { waitUntil: 'domcontentloaded', timeout: 90000 });
   if (!liveResponse?.ok()) throw new Error('Live GitHub Pages returned HTTP ' + liveResponse?.status() + ': ' + liveFailures.join(' | '));
   try { await livePage.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 90000 }); }
   catch (error) { const diagnostic = await livePage.evaluate(() => ({ readyState:document.readyState, loading:document.querySelector('#loading')?.innerText, canvasCount:document.querySelectorAll('#app canvas').length, hudClass:document.querySelector('#hud')?.className, scripts:[...document.scripts].map(s=>s.src), slowResources:performance.getEntriesByType('resource').filter(r=>r.duration>5000).map(r=>({name:r.name,duration:Math.round(r.duration)})).slice(-12) })).catch(() => ({})); const body = (await livePage.locator('body').innerText().catch(() => '')).slice(0, 700); throw new Error('Live site did not finish starting. ' + liveFailures.join(' | ') + ' BODY=' + body + ' DIAGNOSTIC=' + JSON.stringify(diagnostic) + ' :: ' + error.message); }
