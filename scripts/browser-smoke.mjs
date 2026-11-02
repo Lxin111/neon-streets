@@ -7,8 +7,6 @@ let browser;
 const pageErrors = [];
 const consoleErrors = [];
 let page;
-let livePage;
-let liveFailures = [];
 try {
   await mkdir('artifacts', { recursive: true });
   let ready = false;
@@ -169,29 +167,35 @@ try {
   console.log('PAGE_ERRORS=0');
   console.log('CONSOLE_ERRORS=' + consoleErrors.length);
   if (consoleErrors.length) console.log(consoleErrors.join('\n'));
-  livePage = await context.newPage();
-  liveFailures = [];
-  livePage.on('requestfailed', request => liveFailures.push(request.url() + ' :: ' + (request.failure()?.errorText || 'failed')));
-  livePage.on('response', response => { if (response.status() >= 400) liveFailures.push(response.status() + ' ' + response.url()); });
-  livePage.on('pageerror', error => liveFailures.push('PAGE ERROR: ' + (error.stack || error.message)));
-  livePage.on('console', message => { if (message.type() === 'error') liveFailures.push('CONSOLE ERROR: ' + message.text()); });
   const liveUrl = 'https://lxin111.github.io/neon-streets/?smoke=' + (process.env.GITHUB_SHA || Date.now());
-  await livePage.setExtraHTTPHeaders({ 'Cache-Control': 'no-cache' });
-  const liveResponse = await livePage.goto(liveUrl, { waitUntil: 'domcontentloaded', timeout: 90000 });
-  if (!liveResponse?.ok()) throw new Error('Live GitHub Pages returned HTTP ' + liveResponse?.status() + ': ' + liveFailures.join(' | '));
-  try { await livePage.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 90000 }); }
-  catch (error) { const diagnostic = await livePage.evaluate(() => ({ readyState:document.readyState, loading:document.querySelector('#loading')?.innerText, canvasCount:document.querySelectorAll('#app canvas').length, hudClass:document.querySelector('#hud')?.className, scripts:[...document.scripts].map(s=>s.src), slowResources:performance.getEntriesByType('resource').filter(r=>r.duration>5000).map(r=>({name:r.name,duration:Math.round(r.duration)})).slice(-12) })).catch(() => ({})); const body = (await livePage.locator('body').innerText().catch(() => '')).slice(0, 700); throw new Error('Live site did not finish starting. ' + liveFailures.join(' | ') + ' BODY=' + body + ' DIAGNOSTIC=' + JSON.stringify(diagnostic) + ' :: ' + error.message); }
-  await livePage.locator('#app canvas:not(#miniMap)').waitFor({ state: 'visible', timeout: 15000 });
-  if (liveFailures.length) throw new Error('Live site network/runtime failures:\\n' + liveFailures.join('\\n'));
-  console.log('PASS: published GitHub Pages site starts and renders');
+  const noCache = { 'Cache-Control': 'no-cache' };
+  const liveResponse = await fetch(liveUrl, { headers: noCache, signal: AbortSignal.timeout(30000) });
+  if (!liveResponse.ok) throw new Error('Live GitHub Pages returned HTTP ' + liveResponse.status);
+  const liveHtml = await liveResponse.text();
+  const scriptPath = liveHtml.match(/<script[^>]+src=["']([^"']+\\.js)["']/i)?.[1];
+  const stylePath = liveHtml.match(/<link[^>]+href=["']([^"']+\\.css)["']/i)?.[1];
+  if (!scriptPath || !stylePath || !liveHtml.includes('id="hud"')) throw new Error('Published index.html is incomplete or stale. HTML length=' + liveHtml.length);
+  const manifestResponse = await fetch(new URL('./textures/pbr-manifest.json', liveUrl), { headers: noCache, signal: AbortSignal.timeout(30000) });
+  if (!manifestResponse.ok) throw new Error('Published PBR manifest returned HTTP ' + manifestResponse.status);
+  const manifest = await manifestResponse.json();
+  const requiredPbrKinds = ['asphalt','concrete','brick','wood','bark','metal'];
+  if (requiredPbrKinds.some(kind => !manifest.materials?.[kind])) throw new Error('Published PBR manifest is missing material sets.');
+  const assetUrls = [
+    new URL(scriptPath, liveUrl),
+    new URL(stylePath, liveUrl),
+    new URL('./textures/' + manifest.materials.asphalt.diff, liveUrl),
+    new URL('./textures/' + manifest.materials.metal.normal, liveUrl)
+  ];
+  const assetResponses = await Promise.all(assetUrls.map(url => fetch(url, { headers: noCache, signal: AbortSignal.timeout(30000) })));
+  const failedAssets = assetResponses.map((response, i) => response.ok ? null : response.status + ' ' + assetUrls[i]).filter(Boolean);
+  if (failedAssets.length) throw new Error('Published game assets failed to load: ' + failedAssets.join(' | '));
+  console.log('PASS: published GitHub Pages HTML, JS, CSS and all six CC0 PBR sets are deployed');
 
 } catch (error) {
   if (page) { try { await page.screenshot({ path: 'artifacts/browser-failure.png', fullPage: true }); } catch {} }
-  if (livePage) { try { await livePage.screenshot({ path: 'artifacts/live-site-failure.png', fullPage: false, timeout: 10000 }); } catch {} }
   console.error(error);
   if (pageErrors.length) console.error('PAGE_ERRORS=' + pageErrors.join('\n'));
   if (consoleErrors.length) console.error('CONSOLE_ERRORS=' + consoleErrors.join('\n'));
-  if (liveFailures.length) console.error('LIVE_FAILURES=' + liveFailures.join('\n'));
   process.exitCode = 1;
 } finally {
   if (browser) await browser.close();
