@@ -129,6 +129,10 @@ try {
     const boss = game.enemies[game.enemies.length - 1];
     const playerPos = game.player.root.position.clone();
     const forward = new (game.camera.position.constructor)(Math.sin(game.cameraYaw), 0, -Math.cos(game.cameraYaw));
+    const actualSpawn = boss.model.root.position.clone();
+    const actualSpawnDelta = actualSpawn.clone().sub(playerPos);
+    const actualSpawnDistance = actualSpawnDelta.length();
+    const actualSpawnForwardDot = actualSpawnDelta.normalize().dot(forward);
     boss.model.root.position.copy(playerPos).addScaledVector(forward, 5.5);
     boss.model.root.position.y = 0;
     const towardPlayer = playerPos.sub(boss.model.root.position).setY(0).normalize();
@@ -155,11 +159,11 @@ try {
     const rect = {x0:Math.floor(w*.2),x1:Math.ceil(w*.8),y0:Math.floor(h*.05),y1:Math.ceil(h*.95)};
     let changed=0;
     for(let y=rect.y0;y<rect.y1;y+=2)for(let x=rect.x0;x<rect.x1;x+=2){const i=(y*w+x)*4;if(Math.abs(after[i]-before[i])+Math.abs(after[i+1]-before[i+1])+Math.abs(after[i+2]-before[i+2])>24)changed++;}
-    return { scale, finite: Number.isFinite(scale), maxScale: .85, facingDot, meshCount, validGeometry, changedPixels: changed, canvas: [w,h], spawn: boss.model.root.position.toArray() };
+    return { scale, finite: Number.isFinite(scale), maxScale: .85, facingDot, meshCount, validGeometry, changedPixels: changed, canvas: [w,h], actualSpawn: actualSpawn.toArray(), actualSpawnDistance, actualSpawnForwardDot };
   });
   await page.screenshot({ path: 'artifacts/hulk-render.png', fullPage: false });
-  if (!hulkScale.finite || hulkScale.scale > hulkScale.maxScale || hulkScale.facingDot < .98 || hulkScale.meshCount < 30 || !hulkScale.validGeometry || hulkScale.changedPixels < 80) throw new Error('Hulk actual rendered-pixel validation failed: ' + JSON.stringify(hulkScale));
-  console.log('PASS: Hulk meshes alter real WebGL frame pixels in front of the player (' + hulkScale.changedPixels + ' changed samples)');
+  if (!hulkScale.finite || hulkScale.scale > hulkScale.maxScale || hulkScale.facingDot < .98 || hulkScale.meshCount < 30 || !hulkScale.validGeometry || hulkScale.changedPixels < 80 || hulkScale.actualSpawnDistance < 6 || hulkScale.actualSpawnDistance > 15 || hulkScale.actualSpawnForwardDot < .65) throw new Error('Hulk spawn/render validation failed: ' + JSON.stringify(hulkScale));
+  console.log('PASS: Hulk actual spawn is visible and within 6–15m ahead; meshes alter real WebGL frame pixels (' + hulkScale.changedPixels + ' changed samples)');
   await page.evaluate(() => { const {game}=window.__NEON_STREETS_TEST__;const boss=game.enemies[game.enemies.length-1];if(boss?.bossType===0){game.scene.remove(boss.model.root);game.enemies.pop();game.bossActive=false;} });
 
 
