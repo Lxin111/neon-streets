@@ -53,6 +53,21 @@ try {
   });
   if (!backfillResult.created || !backfillResult.restored || backfillResult.district !== 1 || backfillResult.max !== 6) throw new Error('Unlocked district backfill failed: ' + JSON.stringify(backfillResult));
   console.log('PASS: missing first-district checkpoint can be backfilled without unlocking new districts');
+  const restoreQueued = await page.evaluate(() => {
+    const { game } = window.__NEON_STREETS_TEST__;
+    game.maxDistrictReached = 6;
+    localStorage.setItem('ns_campaign_max_district', '6');
+    const snapshot = { ...game.campaignSnapshot(), districtNumber: 1, maxDistrictReached: 6 };
+    localStorage.setItem('ns_campaign_history', JSON.stringify([{ id: 'reload-district-one', districtNumber: 1, level: snapshot.level, gold: snapshot.gold, updatedAt: Date.now(), data: snapshot }]));
+    return game.restoreHistorySave('reload-district-one');
+  });
+  if (!restoreQueued) throw new Error('Could not queue first-district restore');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 120000 });
+  await page.waitForFunction(() => window.__NEON_STREETS_TEST__?.game?.districtNumber === 1, null, { timeout: 30000 });
+  const restoredRuntimeDistrict = await page.evaluate(() => ({ district: window.__NEON_STREETS_TEST__.game.districtNumber, enemies: window.__NEON_STREETS_TEST__.game.enemies.length, boss: !!window.__NEON_STREETS_TEST__.game.bossActive }));
+  if (restoredRuntimeDistrict.district !== 1 || restoredRuntimeDistrict.boss) throw new Error('Runtime did not start in restored district 1: ' + JSON.stringify(restoredRuntimeDistrict));
+  console.log('PASS: reload starts actual gameplay in district 1 after restore');
   await page.locator('#saveOverlay [data-close]').click();
   await page.locator('#miniMapPanel').waitFor({ state: 'visible' });
   const radarSize = await page.locator('#miniMap').evaluate(canvas => ({ width: canvas.width, height: canvas.height, context: !!canvas.getContext('2d') }));
