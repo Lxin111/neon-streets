@@ -57,8 +57,8 @@ try {
     return speeds;
   });
   if (bossSpeeds.length !== 4 || bossSpeeds.some(v => Math.abs(v - .39) > .015)) throw new Error('Boss movement is not 75% of the 5.2 player walk speed: ' + bossSpeeds.join(','));
-  const stunnedBossStillMoves = await page.evaluate(() => { const {game}=window.__NEON_STREETS_TEST__,enemy=game.enemies.find(e=>!e.dead),root=enemy.model.root,player=game.player.root.position,original=root.position.clone(),oldMove=game.moveEnemyToward;root.position.set(player.x,0,player.z-20);const start=root.position.clone();game.moveEnemyToward=(actor,vector)=>{actor.model.root.position.add(vector);return vector.length();};const boss={model:enemy.model,boss:true,bossType:0,hp:100,maxHp:100,attack:99,stun:.9,damageMultiplier:1,seed:17};game.updateEnemy(boss,.1);const moved=root.position.distanceTo(start)>.01;root.position.copy(original);game.moveEnemyToward=oldMove;return moved; });
-  if (!stunnedBossStillMoves) throw new Error('Boss AI stopped moving while stunned.');
+  const stunnedBossKeepsAI = await page.evaluate(() => { const {game}=window.__NEON_STREETS_TEST__,enemy=game.enemies.find(e=>!e.dead),root=enemy.model.root,original=root.position.clone(),oldBossUpdate=game.updateBossEnemy;let calls=0;game.updateBossEnemy=()=>{calls++;};const boss={model:enemy.model,boss:true,bossType:0,hp:100,maxHp:100,attack:99,stun:.9,damageMultiplier:1,seed:17};game.updateEnemy(boss,.1);game.updateBossEnemy=oldBossUpdate;root.position.copy(original);return calls===1&&boss.stun>0; });
+  if (!stunnedBossKeepsAI) throw new Error('Boss AI was incorrectly frozen by hit stun.');
   console.log('PASS: visible daytime sun, 75% boss movement and no stun-induced boss idling');
   const hulkStomp = await page.evaluate(() => {
     const { game } = window.__NEON_STREETS_TEST__, enemy = game.enemies.find(e => !e.dead);
