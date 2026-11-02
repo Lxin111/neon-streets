@@ -68,7 +68,17 @@ try {
   const restoredRuntimeDistrict = await page.evaluate(() => ({ district: window.__NEON_STREETS_TEST__.game.districtNumber, enemies: window.__NEON_STREETS_TEST__.game.enemies.length, boss: !!window.__NEON_STREETS_TEST__.game.bossActive }));
   if (restoredRuntimeDistrict.district !== 1 || restoredRuntimeDistrict.boss) throw new Error('Runtime did not start in restored district 1: ' + JSON.stringify(restoredRuntimeDistrict));
   console.log('PASS: reload starts actual gameplay in district 1 after restore');
-  await page.locator('#saveOverlay [data-close]').click();
+  const inputRecovery = await page.evaluate(() => {
+    const { game } = window.__NEON_STREETS_TEST__;
+    game.mobile = { x: NaN, y: NaN };
+    game.cameraYaw = NaN;
+    game.player.root.position.set(NaN, 0, NaN);
+    game.update(0.016);
+    const p = game.player.root.position;
+    return { x: p.x, y: p.y, z: p.z, yaw: game.cameraYaw, mobileX: game.mobile.x, mobileY: game.mobile.y };
+  });
+  if (![inputRecovery.x,inputRecovery.y,inputRecovery.z,inputRecovery.yaw,inputRecovery.mobileX,inputRecovery.mobileY].every(Number.isFinite)) throw new Error('Invalid movement inputs were not recovered: ' + JSON.stringify(inputRecovery));
+  console.log('PASS: invalid player position, camera and mobile joystick inputs recover safely');
   await page.locator('#miniMapPanel').waitFor({ state: 'visible' });
   const radarSize = await page.locator('#miniMap').evaluate(canvas => ({ width: canvas.width, height: canvas.height, context: !!canvas.getContext('2d') }));
   if (radarSize.width !== 180 || radarSize.height !== 180 || !radarSize.context) throw new Error('Tactical radar canvas did not initialize.');
