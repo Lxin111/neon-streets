@@ -87,28 +87,61 @@ function makeEliteSuit(scene,seed=0){
  return {root,armL,armR,legL,legR,hpFill,hpText,anim:0,isEnemy:true,eliteVisual:true};
 }
 function makeHulkBoss(scene){
- const root=new THREE.Group();scene.add(root);const skin=texturedMat('#4e963c','skin',91,.7),light=texturedMat('#70b65a','skin',92,.64),shadow=mat('#28552a',.88),shorts=texturedMat('#35264b','fabric',93,.88),hair=mat('#25231f',.95),eye=mat('#f0e5c8',.35);
- const part=(geo,material,pos,scale,rot)=>{const m=new THREE.Mesh(geo,material);m.position.set(...pos);if(scale)m.scale.set(...scale);if(rot)m.rotation.set(...rot);m.castShadow=true;m.receiveShadow=true;root.add(m);return m;};
- const muscle=(x,y,z,sx,sy,sz,material=skin,rot=0)=>part(new THREE.SphereGeometry(1,40,32),material,[x,y,z],[sx,sy,sz],[0,0,rot]);
- muscle(0,1.68,0,.77,.66,.39);muscle(-.34,1.78,-.31,.43,.29,.19,light);muscle(.34,1.78,-.31,.43,.29,.19,light);muscle(0,1.2,-.03,.5,.37,.31);
- for(let row=0;row<3;row++)for(const side of [-1,1])muscle(side*.19,1.43-row*.17,-.31,.17,.105,.085,row===1?light:skin);
- // Stronger silhouette: neck, jaw, brow, separated pectorals and abdominal definition.
- muscle(0,2.02,.015,.25,.3,.24,skin);
- muscle(0,2.12,-.265,.27,.16,.12,light);
- muscle(0,2.03,-.355,.09,.11,.075,shadow);
- muscle(-.14,2.34,-.285,.16,.055,.07,hair,-.12);
- muscle(.14,2.34,-.285,.16,.055,.07,hair,.12);
- muscle(0,1.82,.29,.42,.16,.1,shadow);
- muscle(-.38,1.92,-.34,.12,.19,.07,light,-.2);
- muscle(.38,1.92,-.34,.12,.19,.07,light,.2);
-
- muscle(0,2.27,-.02,.34,.38,.31);muscle(0,2.48,-.03,.35,.18,.3,hair);muscle(-.16,2.25,-.28,.13,.09,.1,shadow);muscle(.16,2.25,-.28,.13,.09,.1,shadow);part(new THREE.BoxGeometry(.4,.07,.08),hair,[0,2.36,-.3]);
- for(const side of [-1,1]){part(new THREE.SphereGeometry(.035,16,12),eye,[side*.105,2.25,-.32]);muscle(side*.82,1.67,0,.35,.43,.34,light);muscle(side*1.03,1.23,-.02,.27,.48,.25);muscle(side*1.1,.79,-.01,.2,.24,.2,light);muscle(side*.28,.62,0,.25,.48,.27);muscle(side*.28,.27,-.01,.2,.23,.22,light);}
- part(new THREE.CapsuleGeometry(.53,.32,8,16),shorts,[0,.63,0],[1,.75,.8]);part(new THREE.BoxGeometry(.12,.22,.1),shadow,[0,.47,-.29]);
- const armL=new THREE.Group(),armR=new THREE.Group();armL.position.set(-.78,1.72,0);armR.position.set(.78,1.72,0);root.add(armL,armR);
- for(const [g,side] of [[armL,-1],[armR,1]]){const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.24,.58,8,16),skin);upper.position.set(side*.13,-.3,0);upper.scale.set(1.1,1,.95);upper.castShadow=true;g.add(upper);const fore=new THREE.Mesh(new THREE.CapsuleGeometry(.21,.58,8,16),light);fore.position.set(side*.18,-.82,-.01);fore.castShadow=true;g.add(fore);const fist=new THREE.Mesh(new THREE.SphereGeometry(.24,24,18),skin);fist.position.set(side*.2,-1.18,-.03);fist.scale.set(1.15,.9,1);g.add(fist);}
- const legL=new THREE.Group(),legR=new THREE.Group();legL.position.set(-.27,.55,0);legR.position.set(.27,.55,0);root.add(legL,legR);
- for(const g of [legL,legR]){const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.22,.65,8,16),skin);leg.position.y=-.35;leg.castShadow=true;g.add(leg);const foot=new THREE.Mesh(new THREE.BoxGeometry(.38,.22,.62),skin);foot.position.set(0,-.78,-.1);g.add(foot);}
+ const root=new THREE.Group();scene.add(root);
+ const skin=texturedMat('#4e963c','skin',91,.7),light=texturedMat('#70b65a','skin',92,.64),shadow=mat('#28552a',.88),shorts=texturedMat('#35264b','fabric',93,.88),hair=mat('#25231f',.95),eye=mat('#f0e5c8',.35),crease=mat('#244b25',.95);
+ // Sculpted loft meshes: continuous changing cross-sections replace the old stack of primitive balls.
+ const loft=(profile,material,segments=32)=>{
+  const vertices=[],indices=[];
+  for(let j=0;j<profile.length;j++){const [y,rx,rz,cx=0,cz=0]=profile[j];
+   for(let i=0;i<=segments;i++){const a=i/segments*Math.PI*2;vertices.push(cx+Math.cos(a)*rx,y,cz+Math.sin(a)*rz);}
+  }
+  for(let j=0;j<profile.length-1;j++)for(let i=0;i<segments;i++){const a=j*(segments+1)+i,b=a+segments+1;indices.push(a,b,a+1,b,b+1,a+1);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();
+  const m=new THREE.Mesh(g,material);m.castShadow=true;m.receiveShadow=true;return m;
+ };
+ const add=(mesh,parent=root,pos=[0,0,0],rot=null)=>{mesh.position.set(...pos);if(rot)mesh.rotation.set(...rot);parent.add(mesh);return mesh;};
+ const shape=(profile,material,parent,pos,rot)=>add(loft(profile,material),parent,pos,rot);
+ // Wide trapezius, deep chest, narrow waist and powerful pelvis form one connected torso.
+ shape([[.86,.34,.25],[1.02,.48,.31],[1.2,.51,.32],[1.38,.62,.36],[1.58,.78,.39],[1.78,.84,.4],[1.94,.72,.34],[2.08,.43,.27],[2.16,.27,.22]],skin,root);
+ // Defined pectoral planes and abdominal plates are shallow sculpted surfaces, not spherical chunks.
+ for(const side of [-1,1]){
+  shape([[1.58,.025,.035,side*.04,-.365],[1.65,.18,.065,side*.24,-.355],[1.78,.22,.075,side*.25,-.35],[1.88,.13,.05,side*.2,-.33],[1.91,.02,.02,side*.12,-.32]],light,root);
+  for(let row=0;row<3;row++)shape([[1.16-row*.14,.015,.018,side*.025,-.323],[1.2-row*.14,.105,.035,side*.14,-.315],[1.23-row*.14,.015,.018,side*.26,-.3]],row===1?light:skin,root);
+  shape([[1.83,.02,.04,side*.57,-.02],[1.92,.18,.12,side*.67,-.01],[2.02,.24,.17,side*.68,0],[2.1,.1,.1,side*.57,0]],skin,root);
+ }
+ // Neck and head with a square jaw, heavy brow, cheek planes and visible ears.
+ shape([[1.98,.2,.2],[2.12,.23,.22],[2.27,.22,.2]],skin,root);
+ shape([[2.18,.17,.16],[2.23,.25,.21],[2.38,.29,.24],[2.57,.27,.23],[2.7,.18,.17],[2.74,.08,.1]],light,root);
+ shape([[2.2,.16,.07,0,-.17],[2.27,.24,.055,0,-.19],[2.34,.21,.045,0,-.2]],skin,root);
+ for(const side of [-1,1]){
+  const brow= new THREE.Mesh(new THREE.BoxGeometry(.22,.075,.09),hair);add(brow,root,[side*.125,2.49,-.215],[0,0,side*-.12]);
+  const eyeMesh=new THREE.Mesh(new THREE.BoxGeometry(.105,.035,.025),eye);add(eyeMesh,root,[side*.12,2.445,-.238]);
+  shape([[2.34,.018,.025,side*.25,-.01],[2.43,.07,.07,side*.29,0],[2.51,.025,.035,side*.26,0]],skin,root);
+ }
+ shape([[2.49,.02,.025,0,-.22],[2.4,.045,.045,0,-.245],[2.35,.07,.055,0,-.23]],light,root);
+ shape([[2.2,.03,.025],[2.22,.11,.045],[2.24,.13,.04]],shadow,root);
+ // Short dark messy hair cap and side locks.
+ shape([[2.58,.25,.21],[2.67,.29,.24],[2.75,.24,.2],[2.79,.12,.13]],hair,root);
+ for(const side of [-1,1])shape([[2.48,.035,.05,side*.25,0],[2.58,.07,.08,side*.26,0],[2.66,.035,.05,side*.23,0]],hair,root);
+ // Purple torn shorts with a shaped waistband and separate leg openings.
+ shape([[.43,.34,.27],[.5,.48,.32],[.72,.5,.32],[.88,.43,.29],[.94,.36,.26]],shorts,root);
+ shape([[.87,.38,.275],[.9,.4,.29],[.94,.36,.27]],shadow,root);
+ // Thick arms: broad deltoids taper into forearms and oversized fists; pivots remain animation-compatible.
+ const armL=new THREE.Group(),armR=new THREE.Group();armL.position.set(-.79,1.82,0);armR.position.set(.79,1.82,0);root.add(armL,armR);
+ for(const [g,side] of [[armL,-1],[armR,1]]){
+  shape([[ -.04,.19,.2,0,0],[-.2,.25,.22,side*.03,0],[-.43,.22,.2,side*.06,0],[-.62,.17,.16,side*.1,0],[-.78,.19,.17,side*.13,0],[-.98,.16,.15,side*.16,0],[-1.1,.13,.13,side*.17,0]],skin,g);
+  shape([[-1.04,.13,.14,side*.17,0],[-1.17,.19,.16,side*.18,-.01],[-1.34,.17,.14,side*.19,-.02],[-1.43,.1,.1,side*.19,-.02]],light,g);
+  shape([[-1.35,.13,.13,side*.19,-.05],[-1.48,.19,.15,side*.2,-.07],[-1.62,.16,.13,side*.2,-.08]],skin,g);
+  for(let finger=0;finger<4;finger++){const knuckle=new THREE.Mesh(new THREE.BoxGeometry(.065,.12,.09),light);add(knuckle,g,[side*(.1+finger*.065),-1.59,-.19]);}
+ }
+ // Heavy thighs, knees, calves and broad feet with planted proportions.
+ const legL=new THREE.Group(),legR=new THREE.Group();legL.position.set(-.29,.56,0);legR.position.set(.29,.56,0);root.add(legL,legR);
+ for(const g of [legL,legR]){
+  shape([[.02,.2,.22],[ -.16,.25,.24],[ -.38,.23,.22],[ -.56,.17,.18],[ -.68,.17,.17],[ -.83,.19,.18],[ -.98,.15,.15]],skin,g);
+  shape([[-.94,.15,.15],[-1.08,.17,.16],[-1.23,.14,.14],[-1.31,.12,.12]],light,g);
+  shape([[-1.27,.12,.12],[-1.36,.16,.14],[-1.43,.2,.17]],skin,g);
+  const foot=new THREE.Mesh(new THREE.BoxGeometry(.38,.2,.58),skin);add(foot,g,[0,-1.48,-.13]);
+ }
  return {root,armL,armR,legL,legR,anim:0,isEnemy:true,bossVisual:'hulk'};
 }
 function makeOtherBoss(scene,type){
