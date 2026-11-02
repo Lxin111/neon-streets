@@ -6,6 +6,7 @@ const server = spawn('npm', ['run', 'preview', '--', '--host', '127.0.0.1', '--p
 let browser;
 const pageErrors = [];
 const consoleErrors = [];
+let page;
 try {
   await mkdir('artifacts', { recursive: true });
   let ready = false;
@@ -16,12 +17,12 @@ try {
   if (!ready) throw new Error('Vite preview server did not become ready.');
   browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--enable-webgl', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'] });
   const context = await browser.newContext({ viewport: { width: 1365, height: 768 } });
-  const page = await context.newPage();
+  page = await context.newPage();
   page.on('pageerror', error => pageErrors.push(error.stack || error.message));
   page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
   await page.goto(baseURL + '?test=1', { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 120000 });
-  await page.locator('#app > canvas').waitFor({ state: 'visible', timeout: 15000 });
+  await page.locator('#app canvas:not(#miniMap)').waitFor({ state: 'visible', timeout: 15000 });
   console.log('PASS: desktop game startup and canvas render');
   await page.locator('#miniMapPanel').waitFor({ state: 'visible' });
   const radarSize = await page.locator('#miniMap').evaluate(canvas => ({ width: canvas.width, height: canvas.height, context: !!canvas.getContext('2d') }));
@@ -169,9 +170,10 @@ try {
   console.log('PASS: published GitHub Pages site starts and renders');
 
 } catch (error) {
-  if (browser) {
-  }
+  if (page) { try { await page.screenshot({ path: 'artifacts/browser-failure.png', fullPage: true }); } catch {} }
   console.error(error);
+  if (pageErrors.length) console.error('PAGE_ERRORS=' + pageErrors.join('\n'));
+  if (consoleErrors.length) console.error('CONSOLE_ERRORS=' + consoleErrors.join('\n'));
   process.exitCode = 1;
 } finally {
   if (browser) await browser.close();
