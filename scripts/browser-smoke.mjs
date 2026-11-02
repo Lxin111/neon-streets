@@ -33,8 +33,11 @@ try {
   const hpParts = (hpLabel || '').split('/').map(value => Number(value.trim()));
   if (!hpLabel || /NaN|undefined|null/.test(hpLabel) || hpParts.length !== 2 || !hpParts.every(Number.isFinite) || hpParts[1] <= 0) throw new Error('Player health HUD is invalid: ' + hpLabel);
   console.log('PASS: health HUD displays finite current/max HP (' + hpLabel + ')');
-  const sunVisible = await page.evaluate(() => { const t = window.__NEON_STREETS_TEST__; t.world.environment.setTime(12); return t.world.environment.sunVisual.visible; });
-  if (!sunVisible) throw new Error('Daytime sun visual is not visible at noon.');
+  const sunVisible = await page.evaluate(() => { const t = window.__NEON_STREETS_TEST__; t.world.environment.setTime(12); t.world.environment.update(.016,t.game.player.root.position); const p=t.world.environment.sunVisual.position.clone().project(t.world.camera); return t.world.environment.sunVisual.visible && p.y>.05 && Math.abs(p.x)<.9; });
+  if (!sunVisible) throw new Error('Daytime sun visual is not visible above the player at noon.');
+  const repairedHealth = await page.evaluate(() => { const {game}=window.__NEON_STREETS_TEST__; game.hp=NaN; game.maxHp=NaN; game.updateUI(); return document.querySelector('#hpText').textContent; });
+  if (/NaN|undefined|null/.test(repairedHealth)) throw new Error('Health HUD did not recover from corrupted HP state: '+repairedHealth);
+  console.log('PASS: corrupt HP state self-recovers to finite HUD values');
   const bossSpeeds = await page.evaluate(() => {
     const { game } = window.__NEON_STREETS_TEST__;
     const enemy = game.enemies.find(e => !e.dead);
