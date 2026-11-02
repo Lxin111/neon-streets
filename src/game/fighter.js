@@ -110,7 +110,7 @@ function hulkDiagnosticCode(code,detail={}){
  const entry={time:new Date().toISOString(),code,...detail};
  try{const key='neon_streets_hulk_diagnostics';const list=JSON.parse(localStorage.getItem(key)||'[]');list.push(entry);localStorage.setItem(key,JSON.stringify(list.slice(-40)));}catch{}
  window.__HULK_DIAGNOSTICS__=window.__HULK_DIAGNOSTICS__||[];window.__HULK_DIAGNOSTICS__.push(entry);
- console.error('[HULK-DIAG]['+code+']',entry);
+ (code==='HULK_SNAPSHOT'?console.info:console.error)('[HULK-DIAG]['+code+']',entry);
  try{const b=document.getElementById('hulkDiagnosticCopy');if(b)b.style.display='block';}catch{}
 }
 if(typeof window!=='undefined'&&typeof document!=='undefined'){
@@ -141,7 +141,9 @@ function hulkSnapshot(boss,stage='runtime'){
  const box=new THREE.Box3().setFromObject(root),size=box.getSize(new THREE.Vector3()),pos=root.getWorldPosition(new THREE.Vector3());
  let meshCount=0,visibleMeshes=0,invalidGeometry=0,invalidMaterial=0;
  root.traverse(o=>{if(o.isMesh){meshCount++;if(o.visible&&o.material?.visible!==false)visibleMeshes++;if(!o.geometry||!o.geometry.attributes?.position)invalidGeometry++;const mats=Array.isArray(o.material)?o.material:[o.material];if(mats.some(m=>!m))invalidMaterial++;}});
- const data={stage,position:{x:+pos.x.toFixed(3),y:+pos.y.toFixed(3),z:+pos.z.toFixed(3)},bounds:{min:[box.min.x,box.min.y,box.min.z].map(v=>+v.toFixed(3)),max:[box.max.x,box.max.y,box.max.z].map(v=>+v.toFixed(3)),size:[size.x,size.y,size.z].map(v=>+v.toFixed(3))},meshCount,visibleMeshes,invalidGeometry,invalidMaterial,rootVisible:root.visible,scale:{x:root.scale.x,y:root.scale.y,z:root.scale.z},sceneAttached:!!root.parent};
+ const data={stage,position:{x:+pos.x.toFixed(3),y:+pos.y.toFixed(3),z:+pos.z.toFixed(3)},bounds:{min:[box.min.x,box.min.y,box.min.z].map(v=>+v.toFixed(3)),max:[box.max.x,box.max.y,box.max.z].map(v=>+v.toFixed(3)),size:[size.x,size.y,size.z].map(v=>+v.toFixed(3))},meshCount,visibleMeshes,invalidGeometry,invalidMaterial,rootVisible:root.visible,scale:{x:root.scale.x,y:root.scale.y,z:root.scale.z},sceneAttached:!!root.parent,parentType:root.parent?.type||null,frustumCulledMeshes:0,materials:[]};
+ root.traverse(o=>{if(o.isMesh){if(o.frustumCulled)data.frustumCulledMeshes++;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){if(m)data.materials.push({name:m.name||'',visible:m.visible,opacity:m.opacity,transparent:m.transparent,side:m.side});}}});
+ hulkDiagnosticCode('HULK_SNAPSHOT',data);
  if(!root.parent)hulkDiagnosticCode('HULK_NOT_ATTACHED_TO_SCENE',data);
  if(!root.visible||visibleMeshes===0)hulkDiagnosticCode('HULK_NO_VISIBLE_MESHES',data);
  if(![pos.x,pos.y,pos.z,size.x,size.y,size.z].every(Number.isFinite)||size.length()<.01)hulkDiagnosticCode('HULK_INVALID_BOUNDS',data);
