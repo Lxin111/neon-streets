@@ -667,6 +667,18 @@ initMinimap(){
    history.unshift(entry);localStorage.setItem('ns_campaign_history',JSON.stringify(history.slice(0,30)));return entry;
   }catch(error){console.warn('历史存档失败',error);return null;}
  }
+ ensureDistrictHistorySave(districtNumber){
+  const district=Math.floor(Number(districtNumber)||0),reached=Math.max(1,Math.floor(Number(this.maxDistrictReached)||1));
+  if(!Number.isInteger(district)||district<1||district>reached)return null;
+  const existing=this.getCampaignHistory().filter(x=>Number(x.districtNumber)===district).sort((a,b)=>Number(b.updatedAt)-Number(a.updatedAt))[0];
+  if(existing)return existing;
+  try{
+   const snapshot={...this.campaignSnapshot(),districtNumber:district,maxDistrictReached:reached,updatedAt:Date.now()};
+   const history=JSON.parse(localStorage.getItem('ns_campaign_history')||'[]');
+   const entry={id:String(snapshot.updatedAt)+'-backfill-'+district,reason:'补建街区回档点（保留当前角色成长）',districtNumber:district,level:snapshot.level,gold:snapshot.gold,updatedAt:snapshot.updatedAt,data:snapshot};
+   history.unshift(entry);localStorage.setItem('ns_campaign_history',JSON.stringify(history.slice(0,30)));return entry;
+  }catch(error){console.warn('补建街区回档点失败',error);return null;}
+ }
  getCampaignHistory(){
   try{const list=JSON.parse(localStorage.getItem('ns_campaign_history')||'[]');const reached=Math.max(1,Math.floor(Number(this.maxDistrictReached)||1));return Array.isArray(list)?list.filter(x=>x&&x.data&&Number.isFinite(Number(x.districtNumber))&&Number(x.districtNumber)>=1&&Number(x.districtNumber)<=reached&&Math.floor(Number(x.data.districtNumber))===Math.floor(Number(x.districtNumber))).slice(0,30):[];}catch{return [];}
  }
