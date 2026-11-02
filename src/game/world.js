@@ -29,7 +29,7 @@ const glowMat = (color, roughness, metalness, emissive, intensity) => {
   return materialCache.get(key);
 };
 function detailedSurface(color,kind='concrete',seed=1,roughness=.82,metalness=0){
-  const key=[color,kind,roughness,metalness].join('|');if(materialCache.has(key))return materialCache.get(key);
+  const key=[color,kind,seed%3,roughness,metalness].join('|');if(materialCache.has(key))return materialCache.get(key);
   const size=512,canvas=document.createElement('canvas');canvas.width=canvas.height=size;const ctx=canvas.getContext('2d');ctx.fillStyle=color;ctx.fillRect(0,0,size,size);
   let state=(seed>>>0)||1;const rand=()=>{state=(state*1664525+1013904223)>>>0;return state/4294967296;};
   const img=ctx.getImageData(0,0,size,size),data=img.data;
@@ -82,8 +82,8 @@ function flushBoxBatches(group) {
     const mesh = new THREE.InstancedMesh(geometry, material, matrices.length);
     for (let i = 0; i < matrices.length; i++) mesh.setMatrixAt(i, matrices[i]);
     mesh.instanceMatrix.needsUpdate = true;
-    mesh.castShadow = false;
-    mesh.receiveShadow = false;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
     group.add(mesh);
   }
   batches.clear();
