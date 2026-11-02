@@ -8,6 +8,7 @@ const pageErrors = [];
 const consoleErrors = [];
 let page;
 let livePage;
+let liveFailures = [];
 try {
   await mkdir('artifacts', { recursive: true });
   let ready = false;
@@ -169,7 +170,7 @@ try {
   console.log('CONSOLE_ERRORS=' + consoleErrors.length);
   if (consoleErrors.length) console.log(consoleErrors.join('\n'));
   livePage = await context.newPage();
-  const liveFailures = [];
+  liveFailures = [];
   livePage.on('requestfailed', request => liveFailures.push(request.url() + ' :: ' + (request.failure()?.errorText || 'failed')));
   livePage.on('response', response => { if (response.status() >= 400) liveFailures.push(response.status() + ' ' + response.url()); });
   livePage.on('pageerror', error => liveFailures.push('PAGE ERROR: ' + (error.stack || error.message)));
@@ -188,6 +189,7 @@ try {
   console.error(error);
   if (pageErrors.length) console.error('PAGE_ERRORS=' + pageErrors.join('\n'));
   if (consoleErrors.length) console.error('CONSOLE_ERRORS=' + consoleErrors.join('\n'));
+  if (liveFailures.length) console.error('LIVE_FAILURES=' + liveFailures.join('\n'));
   process.exitCode = 1;
 } finally {
   if (browser) await browser.close();
