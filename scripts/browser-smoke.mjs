@@ -172,8 +172,8 @@ try {
   const liveResponse = await fetch(liveUrl, { headers: noCache, signal: AbortSignal.timeout(30000) });
   if (!liveResponse.ok) throw new Error('Live GitHub Pages returned HTTP ' + liveResponse.status);
   const liveHtml = await liveResponse.text();
-  const scriptPath = liveHtml.match(/<script[^>]+src=["']([^"']+\\.js)["']/i)?.[1];
-  const stylePath = liveHtml.match(/<link[^>]+href=["']([^"']+\\.css)["']/i)?.[1];
+  const scriptPath = liveHtml.match(/<script[^>]+src=["']([^"']+\.js)["']/i)?.[1];
+  const stylePath = liveHtml.match(/<link[^>]+href=["']([^"']+\.css)["']/i)?.[1];
   if (!scriptPath || !stylePath || !liveHtml.includes('id="hud"')) throw new Error('Published index.html is incomplete or stale. HTML length=' + liveHtml.length);
   const manifestResponse = await fetch(new URL('./textures/pbr-manifest.json', liveUrl), { headers: noCache, signal: AbortSignal.timeout(30000) });
   if (!manifestResponse.ok) throw new Error('Published PBR manifest returned HTTP ' + manifestResponse.status);
