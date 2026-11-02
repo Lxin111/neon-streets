@@ -98,59 +98,9 @@ function makeEliteSuit(scene,seed=0){
  const hpBack=new THREE.Sprite(new THREE.SpriteMaterial({color:'#101820',depthTest:false}));hpBack.position.set(0,3.05,0);hpBack.scale.set(1.35,.15,1);hpBack.renderOrder=18;root.add(hpBack);const hpFill=new THREE.Sprite(new THREE.SpriteMaterial({color:'#39e66b',depthTest:false}));hpFill.position.set(0,3.05,.012);hpFill.scale.set(1.28,.09,1);hpFill.renderOrder=19;root.add(hpFill);const hpText=makeHealthText(root,1.28,3.05);
  return {root,armL,armR,legL,legR,hpFill,hpText,anim:0,isEnemy:true,eliteVisual:true};
 }
-// Diagnostic instrumentation for the Hulk boss. Kept lightweight and isolated from gameplay.
-if(typeof window!=='undefined'&&!window.__HULK_DIAGNOSTIC_LISTENERS__){
- window.__HULK_DIAGNOSTIC_LISTENERS__=true;
- window.addEventListener('error',event=>{hulkDiagnosticCode('HULK_GLOBAL_JS_ERROR',{message:event.message||'Unknown error',file:event.filename||'',line:event.lineno||0,column:event.colno||0,stack:event.error?.stack||''});});
- window.addEventListener('unhandledrejection',event=>{hulkDiagnosticCode('HULK_UNHANDLED_REJECTION',{reason:String(event.reason?.message||event.reason),stack:event.reason?.stack||''});});
- window.addEventListener('webglcontextlost',event=>{hulkDiagnosticCode('HULK_WEBGL_CONTEXT_LOST',{message:'WebGL context lost'});},true);
- window.addEventListener('webglcontextrestored',()=>{hulkDiagnosticCode('HULK_WEBGL_CONTEXT_RESTORED',{});},true);
-}
-function hulkDiagnosticCode(code,detail={}){
- const entry={time:new Date().toISOString(),code,...detail};
- try{const key='neon_streets_hulk_diagnostics';const list=JSON.parse(localStorage.getItem(key)||'[]');list.push(entry);localStorage.setItem(key,JSON.stringify(list.slice(-40)));}catch{}
- window.__HULK_DIAGNOSTICS__=window.__HULK_DIAGNOSTICS__||[];window.__HULK_DIAGNOSTICS__.push(entry);
- (code==='HULK_SNAPSHOT'?console.info:console.error)('[HULK-DIAG]['+code+']',entry);
- try{const b=document.getElementById('hulkDiagnosticCopy');if(b)b.style.display='block';}catch{}
-}
-if(typeof window!=='undefined'&&typeof document!=='undefined'){
- const installHulkDiagnosticButton=()=>{
-  if(document.getElementById('hulkDiagnosticCopy'))return;
-  const button=document.createElement('button');button.id='hulkDiagnosticCopy';button.type='button';button.textContent='复制绿巨人诊断';button.title='绿巨人不显示时，点击复制错误报告发给 ChatGPT';
-  button.style.cssText='position:fixed;right:12px;bottom:12px;z-index:99999;padding:10px 13px;border:1px solid #6ff4ff;border-radius:8px;background:#101c26;color:#e9fbff;font:12px sans-serif;box-shadow:0 2px 12px #0009;display:block';
-  button.addEventListener('click',async()=>{
-   let entries=[];try{entries=JSON.parse(localStorage.getItem('neon_streets_hulk_diagnostics')||'[]');}catch{}
-   const report={title:'NEON STREETS Hulk Diagnostic',generatedAt:new Date().toISOString(),page:location.href,userAgent:navigator.userAgent,version:document.querySelector('#gameVersion')?.textContent||'unknown',entries};
-   const output=JSON.stringify(report,null,2);
-   try{await navigator.clipboard.writeText(output);button.textContent='已复制，请发给 ChatGPT';}
-   catch{window.prompt('复制下面的绿巨人诊断报告：',output);button.textContent='诊断报告已打开';}
-   setTimeout(()=>button.textContent='复制绿巨人诊断',3500);
-  });
-  document.body.appendChild(button);
- };
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installHulkDiagnosticButton,{once:true});else installHulkDiagnosticButton();
- window.addEventListener('storage',event=>{if(event.key==='neon_streets_hulk_diagnostics'){const b=document.getElementById('hulkDiagnosticCopy');if(b)b.style.display='block';}});
- const showButton=()=>{const b=document.getElementById('hulkDiagnosticCopy');if(b)b.style.display='block';};
- window.__HULK_DIAGNOSTICS__=window.__HULK_DIAGNOSTICS__||[];
- window.__showHulkDiagnosticButton=showButton;
-}
-function hulkSnapshot(boss,stage='runtime'){
- const root=boss?.model?.root||boss?.root;
- if(!root){hulkDiagnosticCode('HULK_ROOT_MISSING',{stage});return;}
- root.updateMatrixWorld(true);
- const box=new THREE.Box3().setFromObject(root),size=box.getSize(new THREE.Vector3()),pos=root.getWorldPosition(new THREE.Vector3());
- let meshCount=0,visibleMeshes=0,invalidGeometry=0,invalidMaterial=0;
- root.traverse(o=>{if(o.isMesh){meshCount++;if(o.visible&&o.material?.visible!==false)visibleMeshes++;if(!o.geometry||!o.geometry.attributes?.position)invalidGeometry++;const mats=Array.isArray(o.material)?o.material:[o.material];if(mats.some(m=>!m))invalidMaterial++;}});
- const data={stage,position:{x:+pos.x.toFixed(3),y:+pos.y.toFixed(3),z:+pos.z.toFixed(3)},bounds:{min:[box.min.x,box.min.y,box.min.z].map(v=>+v.toFixed(3)),max:[box.max.x,box.max.y,box.max.z].map(v=>+v.toFixed(3)),size:[size.x,size.y,size.z].map(v=>+v.toFixed(3))},meshCount,visibleMeshes,invalidGeometry,invalidMaterial,rootVisible:root.visible,scale:{x:root.scale.x,y:root.scale.y,z:root.scale.z},sceneAttached:!!root.parent,parentType:root.parent?.type||null,frustumCulledMeshes:0,materials:[]};
- root.traverse(o=>{if(o.isMesh){if(o.frustumCulled)data.frustumCulledMeshes++;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){if(m)data.materials.push({name:m.name||'',visible:m.visible,opacity:m.opacity,transparent:m.transparent,side:m.side});}}});
- hulkDiagnosticCode('HULK_SNAPSHOT',data);
- if(!root.parent)hulkDiagnosticCode('HULK_NOT_ATTACHED_TO_SCENE',data);
- if(!root.visible||visibleMeshes===0)hulkDiagnosticCode('HULK_NO_VISIBLE_MESHES',data);
- if(![pos.x,pos.y,pos.z,size.x,size.y,size.z].every(Number.isFinite)||size.length()<.01)hulkDiagnosticCode('HULK_INVALID_BOUNDS',data);
- if(invalidGeometry||invalidMaterial)hulkDiagnosticCode('HULK_INVALID_MESH_DATA',data);
- if(Math.abs(pos.x)>500||Math.abs(pos.z)>500||pos.y< -5||pos.y>100)hulkDiagnosticCode('HULK_POSITION_OUT_OF_RANGE',data);
- return data;
-}
+// Hulk diagnostic collection and copy UI have been removed.
+function hulkDiagnosticCode(){}
+function hulkSnapshot(){return null;}
 function makeHulkBoss(scene){
  let root;
  try{root=new THREE.Group();scene.add(root);
