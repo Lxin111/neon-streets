@@ -143,6 +143,9 @@ try {
       await page.locator('#fovSetting').evaluate(el => { el.value = '74'; el.dispatchEvent(new Event('input', { bubbles: true })); });
       const fov = await page.evaluate(() => localStorage.getItem('ns_fov'));
       if (fov !== '74') throw new Error('FOV setting was not persisted.');
+      await page.locator('#volumeSetting').evaluate(el => { el.value = '43'; el.dispatchEvent(new Event('input', { bubbles: true })); });
+      const volume = await page.evaluate(() => localStorage.getItem('ns_master_volume'));
+      if (volume !== '43') throw new Error('Master audio volume was not persisted.');
     }
     await page.locator(overlay + ' [data-close]').click();
     if (await page.locator('#hud').getAttribute('data-paused') !== 'false') throw new Error(overlay + ' did not resume the game.');
