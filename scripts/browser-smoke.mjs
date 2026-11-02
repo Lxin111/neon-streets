@@ -128,12 +128,23 @@ try {
     game.spawnBossType(0);
     const boss = game.enemies[game.enemies.length - 1];
     const scale = boss.model.root.scale.x;
-    // Root scale is the guardrail; the model's local geometry is authored around a human-sized rig.
+    const playerPos = game.player.root.position.clone();
+    const towardPlayer = playerPos.sub(boss.model.root.position).setY(0).normalize();
+    const facing = new (game.camera.position.constructor)(0, 0, -1).applyQuaternion(boss.model.root.quaternion);
+    const facingDot = facing.dot(towardPlayer);
+    let meshCount = 0, validGeometry = true;
+    boss.model.root.traverse(o => {
+      if (o.isMesh) {
+        meshCount++;
+        const p = o.geometry?.attributes?.position;
+        if (!p || p.count < 3 || !Number.isFinite(p.getX(0)) || !Number.isFinite(p.getY(0)) || !Number.isFinite(p.getZ(0))) validGeometry = false;
+      }
+    });
     game.scene.remove(boss.model.root); game.enemies.splice(start); game.bossActive = false;
-    return { scale, finite: Number.isFinite(scale), maxScale: .85 };
+    return { scale, finite: Number.isFinite(scale), maxScale: .85, facingDot, meshCount, validGeometry };
   });
-  if (!hulkScale.finite || hulkScale.scale > hulkScale.maxScale) throw new Error('Hulk boss scale is outside the visibility-safe range: ' + JSON.stringify(hulkScale));
-  console.log('PASS: Hulk boss spawn scale is clamped to a screen-readable size');
+  if (!hulkScale.finite || hulkScale.scale > hulkScale.maxScale || hulkScale.facingDot < .98 || hulkScale.meshCount < 30 || !hulkScale.validGeometry) throw new Error('Hulk visual/facing validation failed: ' + JSON.stringify(hulkScale));
+  console.log('PASS: Hulk has valid visible meshes, faces the player, and uses a screen-readable spawn scale');
 
 
 
