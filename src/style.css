@@ -71,3 +71,5 @@
 #miniMapPanel footer i,#miniMapPanel footer b,#miniMapPanel footer strong{display:inline-block;width:6px;height:6px;border-radius:50%;background:#eaffff;margin-right:2px}
 #miniMapPanel footer b{background:#52eaff}#miniMapPanel footer strong{background:#ff405d}
 @media(max-width:700px){#miniMapPanel{top:126px;right:8px;width:142px;padding:6px}#miniMap{width:126px;height:126px}#miniMapPanel footer{font-size:8px;gap:4px}}
+
+.loading-version{margin-top:2px;color:#82939d;font:11px 'Barlow Condensed','Noto Sans SC',sans-serif;letter-spacing:.12em}.loading-version b{margin-left:5px;color:#e9c46a;font-size:13px;font-variant-numeric:tabular-nums}
