@@ -10,7 +10,7 @@ const specs = [
   { key: 'brick', id: 'red_bricks_04', name: /red bricks 04/i },
   { key: 'wood', id: 'wood_floor_deck', name: /wood floor deck/i },
   { key: 'bark', id: 'eucalyptus_bark', name: /eucalyptus bark/i },
-  { key: 'metal', id: 'metal_plate_03', name: /metal plate 03/i }
+  { key: 'metal', id: 'rusty_metal_02', name: /rusty metal 02/i }
 ];
 
 async function getJson(url) {
