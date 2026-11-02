@@ -6,6 +6,18 @@ const readSaved=(key,fallback)=>{try{const value=localStorage.getItem(key);if(va
 const mat=(color,roughness=.55,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
 function mesh(g,geo,material,pos,rot){const m=new THREE.Mesh(geo,material);m.position.set(...pos);if(rot)m.rotation.set(...rot);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}
 function capsule(g,r,len,material,pos){return mesh(g,new THREE.CapsuleGeometry(r,len,5,10),material,pos);}
+function organicGeometry(profile,segments=32){
+ const rows=[];
+ for(let k=0;k<profile.length-1;k++){
+  const p0=profile[Math.max(0,k-1)],p1=profile[k],p2=profile[k+1],p3=profile[Math.min(profile.length-1,k+2)];
+  for(let step=0;step<4;step++){const t=step/4,t2=t*t,t3=t2*t;rows.push(p1.map((v,i)=>.5*((2*v)+(-p0[i]+p2[i])*t+(2*p0[i]-5*v+4*p2[i]-p3[i])*t2+(-p0[i]+3*v-3*p2[i]+p3[i])*t3)));}
+ }
+ rows.push(profile[profile.length-1]);const vertices=[],indices=[];
+ for(const [y,rx,rz,cx=0,cz=0] of rows)for(let i=0;i<=segments;i++){const a=i/segments*Math.PI*2;vertices.push(cx+Math.cos(a)*Math.max(.001,rx),y,cz+Math.sin(a)*Math.max(.001,rz));}
+ for(let j=0;j<rows.length-1;j++)for(let i=0;i<segments;i++){const a=j*(segments+1)+i,b=a+segments+1;indices.push(a,b,a+1,b,b+1,a+1);}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();return g;
+}
+function organicMesh(parent,profile,material,pos=[0,0,0],segments=32){const m=new THREE.Mesh(organicGeometry(profile,segments),material);m.position.set(...pos);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
 function makeHealthText(root,width,y){const canvas=document.createElement('canvas');canvas.width=256;canvas.height=64;const ctx=canvas.getContext('2d');ctx.font='bold 42px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=7;ctx.strokeStyle='#071018';ctx.strokeText('0/0',128,33);ctx.fillStyle='#ffffff';ctx.fillText('0/0',128,33);const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false,depthWrite:false}));sprite.position.set(0,y+.005,.045);sprite.scale.set(width*.92,.17,1);sprite.renderOrder=20;root.add(sprite);return {sprite,canvas,ctx,texture};}
 function setHealthDisplay(model,hp,maxHp,width=1.16){const ratio=THREE.MathUtils.clamp((Number(hp)||0)/Math.max(1,Number(maxHp)||1),0,1);if(model.hpFill){model.hpFill.scale.x=width*ratio;model.hpFill.position.x=-width/2+(width*ratio)/2;model.hpFill.material.color.set(ratio>.6?'#39e66b':ratio>.3?'#ff9b2f':'#ff3548');}if(model.hpText){const {ctx,canvas,texture}=model.hpText;ctx.clearRect(0,0,canvas.width,canvas.height);const label=Math.max(0,Math.ceil(Number(hp)||0))+'/'+Math.max(1,Math.ceil(Number(maxHp)||1));ctx.font='bold 42px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=7;ctx.strokeStyle='#071018';ctx.strokeText(label,128,33);ctx.fillStyle='#ffffff';ctx.fillText(label,128,33);texture.needsUpdate=true;}}
 const SWORDS=[{id:'red',name:'赤焰',color:'#ff354f'},{id:'orange',name:'烈阳',color:'#ff8a28'},{id:'yellow',name:'黄金',color:'#ffe45c'},{id:'green',name:'翠岚',color:'#4dff9a'},{id:'cyan',name:'青霆',color:'#39e9ff'},{id:'purple',name:'紫电',color:'#bd70ff'}];
@@ -24,19 +36,19 @@ function makeCloak(root){
 }
 function makeFighter(scene,isEnemy=false,index=0){
  const root=new THREE.Group();scene.add(root);const skin=mat(isEnemy?'#b88769':'#bd9278'),dark=mat('#171a20'),suit=mat(['#242b32','#30343b','#24242a','#343b40'][index%4]),shirt=mat('#d8d8d2'),red=mat('#8c1724',.58);
- capsule(root,.37,.62,isEnemy?suit:dark,[0,1.34,0]);mesh(root,new THREE.BoxGeometry(.68,.58,.16),isEnemy?suit:red,[0,1.42,-.24]);
+ organicMesh(root,[[.94,.22,.2],[1.08,.34,.25],[1.3,.4,.28],[1.52,.43,.27],[1.7,.3,.22],[1.82,.18,.16]],isEnemy?suit:dark);mesh(root,new THREE.BoxGeometry(.68,.58,.16),isEnemy?suit:red,[0,1.42,-.24]);
  let cloak=null,sword=null,gun=null;
  if(!isEnemy){
-  mesh(root,new THREE.SphereGeometry(.245,16,12),skin,[0,2.02,.015]);
+  organicMesh(root,[[1.86,.13,.13],[1.94,.21,.18],[2.08,.23,.19],[2.2,.19,.17],[2.27,.11,.12]],skin);
   mesh(root,new THREE.SphereGeometry(.29,16,10,0,Math.PI*2,0,Math.PI*.52),dark,[0,2.2,-.02]);
   mesh(root,new THREE.ConeGeometry(.34,.48,12),dark,[0,2.28,-.16],[Math.PI,0,0]);
   cloak=makeCloak(root);sword=makeKatana(root,'#ff354f');
  }else{
-  mesh(root,new THREE.SphereGeometry(.245,14,12),skin,[0,2.02,0]);mesh(root,new THREE.SphereGeometry(.25,14,8,0,Math.PI*2,0,Math.PI*.45),dark,[0,2.12,-.02]);
+  organicMesh(root,[[1.86,.13,.13],[1.94,.21,.18],[2.08,.23,.19],[2.2,.19,.17],[2.27,.11,.12]],skin);mesh(root,new THREE.SphereGeometry(.25,14,8,0,Math.PI*2,0,Math.PI*.45),dark,[0,2.12,-.02]);
   mesh(root,new THREE.BoxGeometry(.1,.42,.035),shirt,[0,1.43,-.34]);mesh(root,new THREE.ConeGeometry(.07,.28,4),mat('#6d1821'),[0,1.37,-.37],[Math.PI,0,0]);
  }
- const armL=capsule(root,.12,.48,isEnemy?suit:dark,[-.46,1.42,0]),armR=capsule(root,.12,.48,isEnemy?suit:dark,[.46,1.42,0]);
- mesh(root,new THREE.SphereGeometry(.12,10,8),skin,[-.48,1.12,0]);mesh(root,new THREE.SphereGeometry(.12,10,8),skin,[.48,1.12,0]);
+ const armL=organicMesh(root,[[-.34,.075,.09],[-.22,.12,.12],[-.04,.14,.13],[.16,.13,.12],[.32,.09,.085]],isEnemy?suit:dark,[-.46,1.42,0]),armR=organicMesh(root,[[-.34,.075,.09],[-.22,.12,.12],[-.04,.14,.13],[.16,.13,.12],[.32,.09,.085]],isEnemy?suit:dark,[.46,1.42,0]);
+ organicMesh(root,[[-.06,.07,.075],[.02,.11,.09],[.13,.1,.08],[.2,.055,.06]],skin,[-.48,1.12,0]);organicMesh(root,[[-.06,.07,.075],[.02,.11,.09],[.13,.1,.08],[.2,.055,.06]],skin,[.48,1.12,0]);
  const armor=mat(isEnemy?'#263747':'#202c3b',.28,.78),edge=mat('#718da0',.24,.82),glowMat=new THREE.MeshStandardMaterial({color:'#6ff4ff',metalness:.35,roughness:.2,emissive:'#10cfff',emissiveIntensity:1.35});
   mesh(root,new THREE.BoxGeometry(.58,.34,.2),armor,[0,1.55,-.34]);
   mesh(root,new THREE.BoxGeometry(.48,.09,.22),edge,[0,1.76,-.34]);
@@ -46,7 +58,7 @@ function makeFighter(scene,isEnemy=false,index=0){
   const shoulderL=mesh(root,new THREE.SphereGeometry(.2,12,10),armor,[-.47,1.67,-.02]);shoulderL.scale.set(1.15,.78,1.05);
   const shoulderR=mesh(root,new THREE.SphereGeometry(.2,12,10),armor,[.47,1.67,-.02]);shoulderR.scale.set(1.15,.78,1.05);
   mesh(root,new THREE.BoxGeometry(.42,.09,.12),glowMat,[0,1.17,-.29]);
-  const legL=capsule(root,.15,.48,mat('#111b28',.3,.72),[-.2,.48,0]),legR=capsule(root,.15,.48,mat('#111b28',.3,.72),[.2,.48,0]);
+  const legL=organicMesh(root,[[-.28,.105,.12],[-.14,.14,.14],[.06,.16,.15],[.27,.14,.13],[.48,.1,.1]],mat('#111b28',.3,.72),[-.2,.48,0]),legR=organicMesh(root,[[-.28,.105,.12],[-.14,.14,.14],[.06,.16,.15],[.27,.14,.13],[.48,.1,.1]],mat('#111b28',.3,.72),[.2,.48,0]);
   for(const x of [-.2,.2]){
     mesh(root,new THREE.BoxGeometry(.31,.2,.5),armor,[x,.14,-.08]);
     mesh(root,new THREE.BoxGeometry(.28,.055,.47),edge,[x,.22,-.08]);
@@ -76,13 +88,13 @@ function texturedMat(color,kind,seed,roughness=.72,metalness=0){return new THREE
 function makeEliteSuit(scene,seed=0){
  const root=new THREE.Group();scene.add(root);const skin=texturedMat('#bd8e70','skin',seed+1,.82),suit=texturedMat(seed%2?'#252b35':'#171d27','fabric',seed+2,.88),pants=texturedMat('#171d27','fabric',seed+3,.9),shirt=texturedMat('#e4e5df','fabric',seed+4,.78),tie=mat(seed%2?'#6d1e2c':'#263f66',.72),shoe=mat('#111318',.3,.12),gold=mat('#b89a5b',.3,.72);
  const part=(geo,material,pos,scale,rot)=>{const m=new THREE.Mesh(geo,material);m.position.set(...pos);if(scale)m.scale.set(...scale);if(rot)m.rotation.set(...rot);m.castShadow=true;m.receiveShadow=true;root.add(m);return m;};
- part(new THREE.CapsuleGeometry(.38,.58,8,16),suit,[0,1.38,0],[1,.95,.72]);part(new THREE.BoxGeometry(.54,.62,.12),shirt,[0,1.43,-.28]);part(new THREE.BoxGeometry(.12,.58,.045),tie,[0,1.4,-.36]);
+ part(organicGeometry([[.9,.24,.2],[1.05,.34,.25],[1.3,.42,.29],[1.55,.46,.3],[1.76,.32,.23],[1.9,.18,.15]],32),suit,[0,1.38,0],[1,.95,.72]);part(new THREE.BoxGeometry(.54,.62,.12),shirt,[0,1.43,-.28]);part(new THREE.BoxGeometry(.12,.58,.045),tie,[0,1.4,-.36]);
  for(const side of [-1,1])part(new THREE.BoxGeometry(.18,.62,.055),suit,[side*.17,1.45,-.35],[1,1,1],[0,0,side*.22]);
- part(new THREE.SphereGeometry(.245,32,24),skin,[0,2.08,-.01],[.9,1.05,.9]);part(new THREE.SphereGeometry(.25,24,16,0,Math.PI*2,0,Math.PI*.45),mat('#25201d',.9),[0,2.18,.015],[1,1,.9]);part(new THREE.BoxGeometry(.32,.065,.075),skin,[0,1.99,-.22]);
+ part(organicGeometry([[1.9,.13,.13],[2.0,.2,.17],[2.15,.23,.19],[2.3,.18,.15],[2.38,.1,.1]],32),skin,[0,0,-.01],[.9,1.05,.9]);part(new THREE.SphereGeometry(.25,24,16,0,Math.PI*2,0,Math.PI*.45),mat('#25201d',.9),[0,2.18,.015],[1,1,.9]);part(new THREE.BoxGeometry(.32,.065,.075),skin,[0,1.99,-.22]);
  const armL=new THREE.Group(),armR=new THREE.Group();armL.position.set(-.43,1.62,0);armR.position.set(.43,1.62,0);root.add(armL,armR);
- for(const [g,side] of [[armL,-1],[armR,1]]){const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.12,.38,5,10),suit);upper.position.y=-.23;g.add(upper);const cuff=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.09,12),shirt);cuff.position.y=-.46;g.add(cuff);const hand=new THREE.Mesh(new THREE.SphereGeometry(.105,16,12),skin);hand.position.y=-.57;g.add(hand);part(new THREE.SphereGeometry(.035,12,10),mat('#1c1715'),[side*.09,2.08,-.225]);}
+ for(const [g,side] of [[armL,-1],[armR,1]]){const upper=new THREE.Mesh(organicGeometry([[-.48,.07,.075],[-.36,.12,.11],[-.18,.14,.12],[0,.12,.1],[.12,.08,.075]],24),suit);upper.position.y=-.23;g.add(upper);const cuff=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.09,12),shirt);cuff.position.y=-.46;g.add(cuff);const hand=new THREE.Mesh(new THREE.SphereGeometry(.105,16,12),skin);hand.position.y=-.57;g.add(hand);part(new THREE.SphereGeometry(.035,12,10),mat('#1c1715'),[side*.09,2.08,-.225]);}
  const legL=new THREE.Group(),legR=new THREE.Group();legL.position.set(-.2,.58,0);legR.position.set(.2,.58,0);root.add(legL,legR);
- for(const g of [legL,legR]){const thigh=new THREE.Mesh(new THREE.CapsuleGeometry(.15,.55,6,12),pants);thigh.position.y=-.25;g.add(thigh);const boot=new THREE.Mesh(new THREE.BoxGeometry(.3,.16,.48),shoe);boot.position.set(0,-.55,-.08);g.add(boot);}
+ for(const g of [legL,legR]){const thigh=new THREE.Mesh(organicGeometry([[-.58,.09,.1],[-.44,.14,.14],[-.22,.17,.16],[0,.15,.14],[.12,.1,.1]],24),pants);thigh.position.y=-.25;g.add(thigh);const boot=new THREE.Mesh(new THREE.BoxGeometry(.3,.16,.48),shoe);boot.position.set(0,-.55,-.08);g.add(boot);}
  const hpBack=new THREE.Sprite(new THREE.SpriteMaterial({color:'#101820',depthTest:false}));hpBack.position.set(0,3.05,0);hpBack.scale.set(1.35,.15,1);hpBack.renderOrder=18;root.add(hpBack);const hpFill=new THREE.Sprite(new THREE.SpriteMaterial({color:'#39e66b',depthTest:false}));hpFill.position.set(0,3.05,.012);hpFill.scale.set(1.28,.09,1);hpFill.renderOrder=19;root.add(hpFill);const hpText=makeHealthText(root,1.28,3.05);
  return {root,armL,armR,legL,legR,hpFill,hpText,anim:0,isEnemy:true,eliteVisual:true};
 }
@@ -147,13 +159,13 @@ function makeHulkBoss(scene){
 function makeOtherBoss(scene,type){
  const root=new THREE.Group();scene.add(root);const stone=type===2,base=stone?texturedMat('#667b89','stone',202,.94,.18):texturedMat('#211c2e','fabric',303,.68,.55),trim=mat(stone?'#a8c2ce':'#9a55d9',.28,.82),glow=new THREE.MeshStandardMaterial({color:stone?'#6bcfff':'#bd68ff',emissive:stone?'#2589c8':'#7b24d1',emissiveIntensity:1.8,metalness:.4,roughness:.2});
  const part=(geo,material,pos,scale,rot)=>{const m=new THREE.Mesh(geo,material);m.position.set(...pos);if(scale)m.scale.set(...scale);if(rot)m.rotation.set(...rot);m.castShadow=true;m.receiveShadow=true;root.add(m);return m;};
- part(new THREE.CapsuleGeometry(stone?.62:.42,stone?1.05:.72,8,16),base,[0,1.35,0],[stone?1.25:1,1,stone?1.05:.85]);part(new THREE.SphereGeometry(stone?.39:.28,32,24),base,[0,2.48,-.02],[1,1.1,.9]);
+ part(organicGeometry(stone?[[.68,.3,.28],[.9,.48,.4],[1.3,.65,.52],[1.7,.68,.52],[1.98,.42,.35],[2.12,.2,.2]]:[[.82,.22,.2],[1.02,.34,.28],[1.35,.44,.34],[1.7,.38,.3],[1.94,.22,.2]],32),base,[0,0,0],[stone?1.25:1,1,stone?1.05:.85]);part(organicGeometry([[2.25,.14,.13],[2.35,.24,.2],[2.5,stone?.39:.28,stone?.34:.25],[2.68,stone?.32:.22:.2],[2.76,.12,.12]],32),base,[0,0,-.02],[1,1.1,.9]);
  if(stone){for(const side of [-1,1]){part(new THREE.DodecahedronGeometry(.52),base,[side*.68,1.55,0],[1.15,1.1,1]);part(new THREE.BoxGeometry(.26,.72,.25),trim,[side*.76,.9,-.02]);part(new THREE.BoxGeometry(.28,.25,.3),base,[side*.24,.36,0]);}part(new THREE.BoxGeometry(.7,.14,.12),trim,[0,2.48,-.28]);}
  else{part(new THREE.ConeGeometry(.48,.9,8),base,[0,2.9,.12]);for(const side of [-1,1]){part(new THREE.ConeGeometry(.18,.85,8),trim,[side*.52,1.8,.02],[1,1,1],[0,0,-side*.65]);part(new THREE.BoxGeometry(.08,.62,.1),glow,[side*.19,1.42,-.32]);}part(new THREE.TorusGeometry(.72,.055,10,32),glow,[0,1.2,0],[1,1,1],[Math.PI/2,0,0]);}
  const armL=new THREE.Group(),armR=new THREE.Group();armL.position.set(-.52,1.72,0);armR.position.set(.52,1.72,0);root.add(armL,armR);
- for(const [g,side] of [[armL,-1],[armR,1]]){const arm=new THREE.Mesh(new THREE.CapsuleGeometry(stone?.22:.14,.65,7,12),base);arm.position.set(side*.08,-.38,0);arm.castShadow=true;g.add(arm);const hand=new THREE.Mesh(new THREE.DodecahedronGeometry(.24),trim);hand.position.set(side*.12,-.83,0);g.add(hand);}
+ for(const [g,side] of [[armL,-1],[armR,1]]){const arm=new THREE.Mesh(organicGeometry([[-.82,.1,.1],[-.66,stone?.23:.15,stone?.2:.13],[-.4,stone?.25:.16,stone?.22:.14],[-.16,stone?.18:.12,stone?.16:.1],[.02,.12,.11]],28),base);arm.position.set(side*.08,-.38,0);arm.castShadow=true;g.add(arm);const hand=new THREE.Mesh(new THREE.DodecahedronGeometry(.24),trim);hand.position.set(side*.12,-.83,0);g.add(hand);}
  const legL=new THREE.Group(),legR=new THREE.Group();legL.position.set(-.22,.65,0);legR.position.set(.22,.65,0);root.add(legL,legR);
- for(const g of [legL,legR]){const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.2,.58,7,12),base);leg.position.y=-.32;g.add(leg);}
+ for(const g of [legL,legR]){const leg=new THREE.Mesh(organicGeometry([[-.68,.11,.12],[-.5,.2,.18],[-.28,.23,.2],[-.06,.18,.17],[.12,.12,.12]],28),base);leg.position.y=-.32;g.add(leg);}
  return {root,armL,armR,legL,legR,anim:0,isEnemy:true,bossVisual:stone?'stone-colossus':'void-reaper'};
 }
 
