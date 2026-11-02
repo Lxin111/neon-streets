@@ -218,6 +218,11 @@ try {
       await page.locator('#saveNowBtn').click();
       const checkpoint = await page.evaluate(() => localStorage.getItem('ns_campaign_save'));
       if (!checkpoint || !JSON.parse(checkpoint).districtNumber) throw new Error('Campaign checkpoint was not written.');
+      await page.locator('#historyDistrictInput').fill('999');
+      await page.locator('#restoreDistrictBtn').click();
+      const restoreFeedback = await page.locator('#restoreDistrictStatus').textContent();
+      if (!restoreFeedback || !restoreFeedback.includes('无法回档')) throw new Error('Specified district restore button did not respond with validation feedback: ' + restoreFeedback);
+      console.log('PASS: specified district restore button responds and validates locked districts');
     }
     if (overlay === '#settingsOverlay') {
       await page.locator('#fovSetting').evaluate(el => { el.value = '74'; el.dispatchEvent(new Event('input', { bubbles: true })); });
