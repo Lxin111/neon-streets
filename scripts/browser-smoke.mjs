@@ -127,9 +127,7 @@ try {
     const start = game.enemies.length;
     game.spawnBossType(0);
     const boss = game.enemies[game.enemies.length - 1];
-    const box = new (window.__THREE__?.Box3 || Object)( );
     const scale = boss.model.root.scale.x;
-    const dimensions = new (window.__THREE__?.Vector3 || Object)();
     // Root scale is the guardrail; the model's local geometry is authored around a human-sized rig.
     game.scene.remove(boss.model.root); game.enemies.splice(start); game.bossActive = false;
     return { scale, finite: Number.isFinite(scale), maxScale: .85 };
