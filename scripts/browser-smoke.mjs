@@ -167,7 +167,7 @@ try {
   console.log('PAGE_ERRORS=0');
   console.log('CONSOLE_ERRORS=' + consoleErrors.length);
   if (consoleErrors.length) console.log(consoleErrors.join('\n'));
-  const livePage = await context.newPage();
+  livePage = await context.newPage();
   const liveFailures = [];
   livePage.on('requestfailed', request => liveFailures.push(request.url() + ' :: ' + (request.failure()?.errorText || 'failed')));
   livePage.on('response', response => { if (response.status() >= 400) liveFailures.push(response.status() + ' ' + response.url()); });
@@ -176,13 +176,14 @@ try {
   const liveResponse = await livePage.goto('https://lxin111.github.io/neon-streets/', { waitUntil: 'domcontentloaded', timeout: 90000 });
   if (!liveResponse?.ok()) throw new Error('Live GitHub Pages returned HTTP ' + liveResponse?.status() + ': ' + liveFailures.join(' | '));
   try { await livePage.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 90000 }); }
-  catch (error) { const body = (await livePage.locator('body').innerText().catch(() => '')).slice(0, 500); throw new Error('Live site did not finish starting. ' + liveFailures.join(' | ') + ' BODY=' + body + ' :: ' + error.message); }
+  catch (error) { const diagnostic = await livePage.evaluate(() => ({ readyState:document.readyState, loading:document.querySelector('#loading')?.innerText, canvasCount:document.querySelectorAll('#app canvas').length, hudClass:document.querySelector('#hud')?.className, scripts:[...document.scripts].map(s=>s.src), slowResources:performance.getEntriesByType('resource').filter(r=>r.duration>5000).map(r=>({name:r.name,duration:Math.round(r.duration)})).slice(-12) })).catch(() => ({})); const body = (await livePage.locator('body').innerText().catch(() => '')).slice(0, 700); throw new Error('Live site did not finish starting. ' + liveFailures.join(' | ') + ' BODY=' + body + ' DIAGNOSTIC=' + JSON.stringify(diagnostic) + ' :: ' + error.message); }
   await livePage.locator('#app > canvas').waitFor({ state: 'visible', timeout: 15000 });
   if (liveFailures.length) throw new Error('Live site network/runtime failures:\\n' + liveFailures.join('\\n'));
   console.log('PASS: published GitHub Pages site starts and renders');
 
 } catch (error) {
   if (page) { try { await page.screenshot({ path: 'artifacts/browser-failure.png', fullPage: true }); } catch {} }
+  if (livePage) { try { await livePage.screenshot({ path: 'artifacts/live-site-failure.png', fullPage: true }); } catch {} }
   console.error(error);
   if (pageErrors.length) console.error('PAGE_ERRORS=' + pageErrors.join('\n'));
   if (consoleErrors.length) console.error('CONSOLE_ERRORS=' + consoleErrors.join('\n'));
