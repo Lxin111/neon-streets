@@ -672,7 +672,7 @@ initMinimap(){
  }
  restoreHistorySave(id){
   const entry=this.getCampaignHistory().find(x=>x.id===id);if(!entry||Number(entry.districtNumber)>Math.max(1,Number(this.maxDistrictReached)||1))return false;
-  try{localStorage.setItem('ns_campaign_save',JSON.stringify(entry.data));return true;}catch(error){console.warn('历史存档读取失败',error);return false;}
+  try{const restored={...entry.data,maxDistrictReached:Math.max(1,Number(this.maxDistrictReached)||1)};localStorage.setItem('ns_campaign_save',JSON.stringify(restored));return true;}catch(error){console.warn('历史存档读取失败',error);return false;}
  }
  initQuests(){const day=new Date().toISOString().slice(0,10);if(!this.questState||this.questState.day!==day)this.questState={day,progress:{kills:0,attacks:0,bosses:0},claimed:[]};this.questState.progress??={kills:0,attacks:0,bosses:0};this.questState.claimed??=[];}
  trackQuest(type,amount=1){if(!this.questState)this.initQuests();if(!['kills','attacks','bosses'].includes(type))return;this.questState.progress[type]=Math.max(0,(Number(this.questState.progress[type])||0)+amount);this.saveCampaign();}
