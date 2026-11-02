@@ -49,7 +49,7 @@ export class EnvironmentSystem {
     this.hemi.color.copy(new THREE.Color('#a8c9e5').lerp(new THREE.Color('#e4d7c0'),day*.55));
     this.hemi.groundColor.copy(ground);this.hemi.intensity=.22+day*.72;
     const angle=(h/24)*Math.PI*2-Math.PI/2;
-    this.sun.position.set(Math.cos(angle)*34,Math.max(3,Math.sin(angle)*42),18);
+    this.sun.position.set(Math.cos(angle)*34,Math.max(3,Math.sin(angle)*42),-18);
     this.sun.intensity=.12+day*1.55;
     this.sun.color.set(this.weather==='snow'?'#dcecff':this.weather==='rain'||this.weather==='fog'?'#a9bac9':twilight>.25?'#ffbd88':'#b8d8ff');
     this.sunVisual.visible=day>.04&&this.time>5&&this.time<20.2;this.sunDisc.material.color.set(twilight>.2?'#ffcf91':'#fff0b3');
@@ -57,7 +57,7 @@ export class EnvironmentSystem {
     this.rain.material.opacity=this.weather==='rain'?.58:0;
   }
   update(dt,center){
-    if(this.sunVisual.visible){const direction=this.sun.position.clone().normalize();this.sunVisual.position.copy(this.camera.position).addScaledVector(direction,78);this.sunVisual.quaternion.copy(this.camera.quaternion);}
+    if(this.sunVisual.visible){const forward=new THREE.Vector3(0,0,-1).applyQuaternion(this.camera.quaternion).normalize();const up=new THREE.Vector3(0,1,0).applyQuaternion(this.camera.quaternion).normalize();const side=new THREE.Vector3().crossVectors(forward,up).normalize();const azimuth=Math.atan2(this.sun.position.x,-this.sun.position.z);this.sunVisual.position.copy(this.camera.position).addScaledVector(forward,62).addScaledVector(up,13).addScaledVector(side,Math.sin(azimuth)*5);this.sunVisual.quaternion.copy(this.camera.quaternion);}
     if(this.weather==='rain'){
       for(let i=0;i<this.rainCount;i++){const n=i*6;this.rainPositions[n]+=dt*.7;this.rainPositions[n+1]-=dt*19;if(this.rainPositions[n+1]<0)this.resetRain(i);}
       this.rain.position.set(center?.x||0,0,center?.z||0);this.rain.geometry.attributes.position.needsUpdate=true;
