@@ -128,7 +128,7 @@ try {
     game.spawnBossType(0);
     const boss = game.enemies[game.enemies.length - 1];
     const playerPos = game.player.root.position.clone();
-    const forward = new (game.camera.position.constructor)(Math.sin(game.cameraYaw), 0, -Math.cos(game.cameraYaw));
+    const forward = new (game.camera.position.constructor)(-Math.sin(game.cameraYaw), 0, -Math.cos(game.cameraYaw));
     const actualSpawn = boss.model.root.position.clone();
     const actualSpawnDelta = actualSpawn.clone().sub(playerPos);
     const actualSpawnDistance = actualSpawnDelta.length();
