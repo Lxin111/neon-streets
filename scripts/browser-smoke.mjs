@@ -23,6 +23,10 @@ try {
   await page.goto(baseURL + '?test=1', { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.locator('#hud:not(.hidden)').waitFor({ state: 'visible', timeout: 120000 });
   await page.locator('#app canvas:not(#miniMap)').waitFor({ state: 'visible', timeout: 15000 });
+  const pbrKinds = await page.evaluate(() => window.__NEON_STREETS_TEST__.world.pbrTextureKinds || []);
+  const requiredPbrKinds = ['asphalt','concrete','brick','wood','bark','metal'];
+  if (requiredPbrKinds.some(kind => !pbrKinds.includes(kind))) throw new Error('Missing scanned PBR material sets: ' + requiredPbrKinds.filter(kind => !pbrKinds.includes(kind)).join(', '));
+  console.log('PASS: scanned CC0 PBR maps loaded for asphalt, concrete, brick, wood, bark and metal');
   console.log('PASS: desktop game startup and canvas render');
   await page.locator('#miniMapPanel').waitFor({ state: 'visible' });
   const radarSize = await page.locator('#miniMap').evaluate(canvas => ({ width: canvas.width, height: canvas.height, context: !!canvas.getContext('2d') }));
