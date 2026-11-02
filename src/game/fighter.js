@@ -98,8 +98,31 @@ function makeEliteSuit(scene,seed=0){
  const hpBack=new THREE.Sprite(new THREE.SpriteMaterial({color:'#101820',depthTest:false}));hpBack.position.set(0,3.05,0);hpBack.scale.set(1.35,.15,1);hpBack.renderOrder=18;root.add(hpBack);const hpFill=new THREE.Sprite(new THREE.SpriteMaterial({color:'#39e66b',depthTest:false}));hpFill.position.set(0,3.05,.012);hpFill.scale.set(1.28,.09,1);hpFill.renderOrder=19;root.add(hpFill);const hpText=makeHealthText(root,1.28,3.05);
  return {root,armL,armR,legL,legR,hpFill,hpText,anim:0,isEnemy:true,eliteVisual:true};
 }
+// Diagnostic instrumentation for the Hulk boss. Kept lightweight and isolated from gameplay.
+function hulkDiagnosticCode(code,detail={}){
+ const entry={time:new Date().toISOString(),code,...detail};
+ try{const key='neon_streets_hulk_diagnostics';const list=JSON.parse(localStorage.getItem(key)||'[]');list.push(entry);localStorage.setItem(key,JSON.stringify(list.slice(-40)));}catch{}
+ window.__HULK_DIAGNOSTICS__=window.__HULK_DIAGNOSTICS__||[];window.__HULK_DIAGNOSTICS__.push(entry);
+ console.error('[HULK-DIAG]['+code+']',entry);
+}
+function hulkSnapshot(boss,stage='runtime'){
+ const root=boss?.model?.root||boss?.root;
+ if(!root){hulkDiagnosticCode('HULK_ROOT_MISSING',{stage});return;}
+ root.updateMatrixWorld(true);
+ const box=new THREE.Box3().setFromObject(root),size=box.getSize(new THREE.Vector3()),pos=root.getWorldPosition(new THREE.Vector3());
+ let meshCount=0,visibleMeshes=0,invalidGeometry=0,invalidMaterial=0;
+ root.traverse(o=>{if(o.isMesh){meshCount++;if(o.visible&&o.material?.visible!==false)visibleMeshes++;if(!o.geometry||!o.geometry.attributes?.position)invalidGeometry++;const mats=Array.isArray(o.material)?o.material:[o.material];if(mats.some(m=>!m))invalidMaterial++;}});
+ const data={stage,position:{x:+pos.x.toFixed(3),y:+pos.y.toFixed(3),z:+pos.z.toFixed(3)},bounds:{min:[box.min.x,box.min.y,box.min.z].map(v=>+v.toFixed(3)),max:[box.max.x,box.max.y,box.max.z].map(v=>+v.toFixed(3)),size:[size.x,size.y,size.z].map(v=>+v.toFixed(3))},meshCount,visibleMeshes,invalidGeometry,invalidMaterial,rootVisible:root.visible,scale:{x:root.scale.x,y:root.scale.y,z:root.scale.z},sceneAttached:!!root.parent};
+ if(!root.parent)hulkDiagnosticCode('HULK_NOT_ATTACHED_TO_SCENE',data);
+ if(!root.visible||visibleMeshes===0)hulkDiagnosticCode('HULK_NO_VISIBLE_MESHES',data);
+ if(![pos.x,pos.y,pos.z,size.x,size.y,size.z].every(Number.isFinite)||size.length()<.01)hulkDiagnosticCode('HULK_INVALID_BOUNDS',data);
+ if(invalidGeometry||invalidMaterial)hulkDiagnosticCode('HULK_INVALID_MESH_DATA',data);
+ if(Math.abs(pos.x)>500||Math.abs(pos.z)>500||pos.y< -5||pos.y>100)hulkDiagnosticCode('HULK_POSITION_OUT_OF_RANGE',data);
+ return data;
+}
 function makeHulkBoss(scene){
- const root=new THREE.Group();scene.add(root);
+ let root;
+ try{root=new THREE.Group();scene.add(root);
  const skin=texturedMat('#4e963c','skin',91,.7),light=texturedMat('#70b65a','skin',92,.64),shadow=mat('#28552a',.88),shorts=texturedMat('#35264b','fabric',93,.88),hair=mat('#25231f',.95),eye=mat('#f0e5c8',.35),crease=mat('#244b25',.95);
  for(const material of [skin,light,shadow,shorts,hair,eye,crease]){material.side=THREE.DoubleSide;material.needsUpdate=true;}
  // Sculpted loft meshes: continuous changing cross-sections replace the old stack of primitive balls.
@@ -155,7 +178,8 @@ function makeHulkBoss(scene){
   shape([[-1.27,.12,.12],[-1.36,.16,.14],[-1.43,.2,.17]],skin,g);
   const foot=new THREE.Mesh(new THREE.BoxGeometry(.38,.2,.58),skin);add(foot,g,[0,-1.48,-.13]);
  }
- root.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;o.material.side=THREE.DoubleSide;o.material.needsUpdate=true;o.geometry.computeBoundingBox();o.geometry.computeBoundingSphere();}});root.visible=true;return {root,armL,armR,legL,legR,anim:0,isEnemy:true,bossVisual:'hulk'};
+ root.traverse(o=>{if(o.isMesh){o.visible=true;o.frustumCulled=false;o.material.side=THREE.DoubleSide;o.material.needsUpdate=true;o.geometry.computeBoundingBox();o.geometry.computeBoundingSphere();}});root.visible=true;const result={root,armL,armR,legL,legR,anim:0,isEnemy:true,bossVisual:'hulk'};hulkSnapshot(result,'model-created');return result;
+ }catch(error){hulkDiagnosticCode('HULK_MODEL_CREATION_FAILED',{message:error?.message||String(error),stack:error?.stack||''});throw error;}
 }
 function makeOtherBoss(scene,type){
  const root=new THREE.Group();scene.add(root);const stone=type===2,base=stone?texturedMat('#667b89','stone',202,.94,.18):texturedMat('#211c2e','fabric',303,.68,.55),trim=mat(stone?'#a8c2ce':'#9a55d9',.28,.82),glow=new THREE.MeshStandardMaterial({color:stone?'#6bcfff':'#bd68ff',emissive:stone?'#2589c8':'#7b24d1',emissiveIntensity:1.8,metalness:.4,roughness:.2});
