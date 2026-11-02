@@ -18,6 +18,35 @@ const materialCache = new Map();
 const geometryCache = new Map();
 // Boxes are collected and emitted as InstancedMesh batches to avoid thousands of draw calls.
 const batchesByGroup = new WeakMap();
+let pbrTextureSets = {};
+async function loadPbrTextureSets(onProgress=()=>{}) {
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}textures/pbr-manifest.json`, { cache: 'force-cache' });
+    if (!response.ok) return;
+    const manifest = await response.json();
+    const loader = new THREE.TextureLoader();
+    const loadMap = async (filename, color=false) => {
+      if (!filename) return null;
+      const texture = await loader.loadAsync(`${import.meta.env.BASE_URL}textures/${filename}`);
+      texture.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.anisotropy = 8;
+      return texture;
+    };
+    const entries = await Promise.all(Object.entries(manifest.materials || {}).map(async ([kind, files]) => {
+      const [diff, normal, rough, height, metal] = await Promise.all([
+        loadMap(files.diff, true), loadMap(files.normal), loadMap(files.rough), loadMap(files.height), loadMap(files.metal)
+      ]);
+      return [kind, { diff, normal, rough, height, metal }];
+    }));
+    pbrTextureSets = Object.fromEntries(entries.filter(([, maps]) => maps.diff));
+    onProgress(5, '真实扫描 PBR 材质已载入…');
+  } catch (error) {
+    pbrTextureSets = {};
+    console.warn('Poly Haven PBR 材质不可用，使用程序化纹理回退。', error);
+  }
+}
+
 const mat = (color, roughness = .8, metalness = 0) => {
   const key = [color, roughness, metalness].join('|');
   if (!materialCache.has(key)) materialCache.set(key, new THREE.MeshStandardMaterial({ color, roughness, metalness }));
@@ -30,6 +59,13 @@ const glowMat = (color, roughness, metalness, emissive, intensity) => {
 };
 function detailedSurface(color,kind='concrete',seed=1,roughness=.82,metalness=0){
   const key=[color,kind,seed%3,roughness,metalness].join('|');if(materialCache.has(key))return materialCache.get(key);
+  const pbr=pbrTextureSets[kind]||(kind==='brick'?pbrTextureSets.concrete:null);
+  if(pbr?.diff){
+    const repeatX=kind==='bark'?1.2:kind==='asphalt'?3.4:2.2,repeatY=kind==='bark'?2.8:2.2;
+    const cloneMap=source=>{if(!source)return null;const map=source.clone();map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(repeatX,repeatY);map.anisotropy=8;return map;};
+    const material=new THREE.MeshStandardMaterial({color:new THREE.Color(color),map:cloneMap(pbr.diff),normalMap:cloneMap(pbr.normal),roughnessMap:cloneMap(pbr.rough),bumpMap:cloneMap(pbr.height),metalnessMap:cloneMap(pbr.metal),normalScale:new THREE.Vector2(.72,.72),bumpScale:kind==='asphalt'?.035:.022,roughness,metalness});
+    materialCache.set(key,material);return material;
+  }
   const size=512,canvas=document.createElement('canvas');canvas.width=canvas.height=size;const ctx=canvas.getContext('2d');ctx.fillStyle=color;ctx.fillRect(0,0,size,size);
   let state=(seed>>>0)||1;const rand=()=>{state=(state*1664525+1013904223)>>>0;return state/4294967296;};
   const img=ctx.getImageData(0,0,size,size),data=img.data;
@@ -89,7 +125,7 @@ function flushBoxBatches(group) {
   batches.clear();
 }
 function makeBuilding(group,x,z,w,d,h,color,seed){
-  const wall=detailedSurface(color,'concrete',seed,.86,.08),dark=detailedSurface('#101a25','metal',seed+31,.42,.72),trim=detailedSurface('#34485a','metal',seed+32,.34,.8);
+  const wall=detailedSurface(color,seed%3===0?'brick':'concrete',seed,.86,.08),dark=detailedSurface('#101a25','metal',seed+31,.42,.72),trim=detailedSurface('#34485a','metal',seed+32,.34,.8);
   const neonColors=['#12dfff','#ff3f9b','#a66bff','#ffb84d'],neon=neonColors[seed%neonColors.length];
   box(w,h,d,wall,x,h/2,z,group);box(w+.24,.22,d+.24,trim,x,h,z,group);box(w+.12,.12,d+.12,dark,x,.18,z,group);
   const floors=Math.max(2,Math.floor(h/2.45));
@@ -128,6 +164,7 @@ function makeStreetLamp(group,x,z){
   const light=new THREE.PointLight('#42dfff',15,12,2);light.position.set(x+.76,4.05,z);group.add(light);
 }
 export async function createWorld(onProgress = () => {}) {
+  await loadPbrTextureSets(onProgress);
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#07111f');
   scene.fog = new THREE.FogExp2('#101d31', .009);
