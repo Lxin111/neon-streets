@@ -17,6 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Increment game version for this update
+        if: "!contains(github.event.head_commit.message, '[version-bump]')"
         run: |
           set -e
           mkdir -p public
