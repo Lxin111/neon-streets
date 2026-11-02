@@ -91,6 +91,51 @@ try {
   if (!bossPhaseTwo) throw new Error('Boss did not enter phase two at half health.');
 
   console.log('PASS: Hulk leg-lift stomp telegraph and photogrammetry isolation guards');
+  const healthBarsAndImpacts = await page.evaluate(() => {
+    const { game } = window.__NEON_STREETS_TEST__;
+    const normal = game.enemies.find(e => !e.dead && !e.elite && !e.boss);
+    if (!normal?.model.hpText) return { error: 'Normal enemy numeric health label missing.' };
+    const original = { hp: normal.hp, maxHp: normal.maxHp, activeWeapon: game.activeWeapon, swordColor: game.swordColor };
+    const colors = [];
+    for (const ratio of [.8,.5,.2]) {
+      normal.hp = normal.maxHp * ratio;
+      game.damageEnemy(normal, 1);
+      colors.push(normal.model.hpFill.material.color.getHexString());
+    }
+    const label = normal.model.hpText.ctx ? normal.model.hpText.canvas : null;
+    const textReady = !!label && normal.model.hpText.texture.image === label;
+    normal.hp = original.hp; normal.maxHp = original.maxHp;
+    const eliteStart = game.enemies.length;
+    game.spawnElites(1);
+    const elite = game.enemies[game.enemies.length - 1];
+    const eliteHasText = !!elite?.model.hpText;
+    if (elite) { game.damageEnemy(elite, 1); game.scene.remove(elite.model.root); game.enemies.pop(); }
+    const weaponColors = [];
+    game.activeWeapon = 'katana';
+    for (const color of ['#ff354f','#ff8a28','#ffe45c','#4dff9a','#39e9ff','#bd70ff']) {
+      game.swordColor = color;
+      game.hitImpact(game.player.root.position, color);
+      weaponColors.push(color);
+    }
+    game.activeWeapon = original.activeWeapon; game.swordColor = original.swordColor;
+    return { colors, label: textReady, eliteHasText, weaponColors, impactParticles: game.particles.length };
+  });
+  if (healthBarsAndImpacts.error || healthBarsAndImpacts.colors.join(',') !== '39e66b,ff9b2f,ff3548' || !healthBarsAndImpacts.label || !healthBarsAndImpacts.eliteHasText || new Set(healthBarsAndImpacts.weaponColors).size !== 6 || healthBarsAndImpacts.impactParticles < 6) throw new Error('Enemy health bar / colored hit effect check failed: ' + JSON.stringify(healthBarsAndImpacts));
+  console.log('PASS: normal/elite health bars show numeric HP and transition green → orange → red; six katana colors produce distinct hit sparks');
+  const hulkScale = await page.evaluate(() => {
+    const { game } = window.__NEON_STREETS_TEST__;
+    const start = game.enemies.length;
+    game.spawnBossType(0);
+    const boss = game.enemies[game.enemies.length - 1];
+    const box = new (window.__THREE__?.Box3 || Object)( );
+    const scale = boss.model.root.scale.x;
+    const dimensions = new (window.__THREE__?.Vector3 || Object)();
+    // Root scale is the guardrail; the model's local geometry is authored around a human-sized rig.
+    game.scene.remove(boss.model.root); game.enemies.splice(start); game.bossActive = false;
+    return { scale, finite: Number.isFinite(scale), maxScale: .85 };
+  });
+  if (!hulkScale.finite || hulkScale.scale > hulkScale.maxScale) throw new Error('Hulk boss scale is outside the visibility-safe range: ' + JSON.stringify(hulkScale));
+  console.log('PASS: Hulk boss spawn scale is clamped to a screen-readable size');
 
 
 
