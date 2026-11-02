@@ -151,13 +151,7 @@ try {
     const read = () => { const pixels = new Uint8Array(w*h*4); gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,pixels); return pixels; };
     boss.model.root.visible = false; world.renderer.render(game.scene,game.camera); const before = read();
     boss.model.root.visible = true; world.renderer.render(game.scene,game.camera); const after = read();
-    const bounds = new (game.camera.position.constructor)(0,0,0);
-    const box = new (window.__THREE_BOX3__ || Object.getPrototypeOf(game.player.root.position).constructor)( );
-    const projected = [];
-    const min = new (game.camera.position.constructor)(Infinity,Infinity,Infinity), max = new (game.camera.position.constructor)(-Infinity,-Infinity,-Infinity);
     boss.model.root.updateMatrixWorld(true);
-    const worldBox = new (world.THREE?.Box3 || Object.getPrototypeOf(game.scene).constructor)( );
-    const box3 = new (game.player.root.position.constructor)(0,0,0);
     const rect = {x0:Math.floor(w*.2),x1:Math.ceil(w*.8),y0:Math.floor(h*.05),y1:Math.ceil(h*.95)};
     let changed=0;
     for(let y=rect.y0;y<rect.y1;y+=2)for(let x=rect.x0;x<rect.x1;x+=2){const i=(y*w+x)*4;if(Math.abs(after[i]-before[i])+Math.abs(after[i+1]-before[i+1])+Math.abs(after[i+2]-before[i+2])>24)changed++;}
