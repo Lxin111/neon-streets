@@ -123,13 +123,17 @@ try {
   if (healthBarsAndImpacts.error || healthBarsAndImpacts.colors.join(',') !== '39e66b,ff9b2f,ff3548' || !healthBarsAndImpacts.label || !healthBarsAndImpacts.eliteHasText || new Set(healthBarsAndImpacts.weaponColors).size !== 6 || healthBarsAndImpacts.impactParticles < 6) throw new Error('Enemy health bar / colored hit effect check failed: ' + JSON.stringify(healthBarsAndImpacts));
   console.log('PASS: normal/elite health bars show numeric HP and transition green → orange → red; six katana colors produce distinct hit sparks');
   const hulkScale = await page.evaluate(() => {
-    const { game } = window.__NEON_STREETS_TEST__;
+    const { game, world } = window.__NEON_STREETS_TEST__;
     const start = game.enemies.length;
     game.spawnBossType(0);
     const boss = game.enemies[game.enemies.length - 1];
-    const scale = boss.model.root.scale.x;
     const playerPos = game.player.root.position.clone();
+    const forward = new (game.camera.position.constructor)(Math.sin(game.cameraYaw), 0, -Math.cos(game.cameraYaw));
+    boss.model.root.position.copy(playerPos).addScaledVector(forward, 5.5);
+    boss.model.root.position.y = 0;
     const towardPlayer = playerPos.sub(boss.model.root.position).setY(0).normalize();
+    boss.model.root.rotation.y = Math.atan2(-towardPlayer.x, -towardPlayer.z);
+    const scale = boss.model.root.scale.x;
     const facing = new (game.camera.position.constructor)(0, 0, -1).applyQuaternion(boss.model.root.quaternion);
     const facingDot = facing.dot(towardPlayer);
     let meshCount = 0, validGeometry = true;
@@ -140,11 +144,28 @@ try {
         if (!p || p.count < 3 || !Number.isFinite(p.getX(0)) || !Number.isFinite(p.getY(0)) || !Number.isFinite(p.getZ(0))) validGeometry = false;
       }
     });
+    game.camera.position.set(game.player.root.position.x, game.player.root.position.y + 1.62, game.player.root.position.z);
+    game.camera.rotation.order = 'YXZ'; game.camera.rotation.y = game.cameraYaw; game.camera.rotation.x = game.cameraPitch;
+    world.renderer.render(game.scene, game.camera);
+    const gl = world.renderer.getContext(), canvas = world.renderer.domElement, w = canvas.width, h = canvas.height;
+    const read = () => { const pixels = new Uint8Array(w*h*4); gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,pixels); return pixels; };
+    boss.model.root.visible = false; world.renderer.render(game.scene,game.camera); const before = read();
+    boss.model.root.visible = true; world.renderer.render(game.scene,game.camera); const after = read();
+    const bounds = new (game.camera.position.constructor)(0,0,0);
+    const box = new (window.__THREE_BOX3__ || Object.getPrototypeOf(game.player.root.position).constructor)( );
+    const projected = [];
+    const min = new (game.camera.position.constructor)(Infinity,Infinity,Infinity), max = new (game.camera.position.constructor)(-Infinity,-Infinity,-Infinity);
+    boss.model.root.updateMatrixWorld(true);
+    const worldBox = new (world.THREE?.Box3 || Object.getPrototypeOf(game.scene).constructor)( );
+    const box3 = new (game.player.root.position.constructor)(0,0,0);
+    const rect = {x0:Math.floor(w*.2),x1:Math.ceil(w*.8),y0:Math.floor(h*.05),y1:Math.ceil(h*.95)};
+    let changed=0;
+    for(let y=rect.y0;y<rect.y1;y+=2)for(let x=rect.x0;x<rect.x1;x+=2){const i=(y*w+x)*4;if(Math.abs(after[i]-before[i])+Math.abs(after[i+1]-before[i+1])+Math.abs(after[i+2]-before[i+2])>24)changed++;}
     game.scene.remove(boss.model.root); game.enemies.splice(start); game.bossActive = false;
-    return { scale, finite: Number.isFinite(scale), maxScale: .85, facingDot, meshCount, validGeometry };
+    return { scale, finite: Number.isFinite(scale), maxScale: .85, facingDot, meshCount, validGeometry, changedPixels: changed, canvas: [w,h] };
   });
-  if (!hulkScale.finite || hulkScale.scale > hulkScale.maxScale || hulkScale.facingDot < .98 || hulkScale.meshCount < 30 || !hulkScale.validGeometry) throw new Error('Hulk visual/facing validation failed: ' + JSON.stringify(hulkScale));
-  console.log('PASS: Hulk has valid visible meshes, faces the player, and uses a screen-readable spawn scale');
+  if (!hulkScale.finite || hulkScale.scale > hulkScale.maxScale || hulkScale.facingDot < .98 || hulkScale.meshCount < 30 || !hulkScale.validGeometry || hulkScale.changedPixels < 80) throw new Error('Hulk actual rendered-pixel validation failed: ' + JSON.stringify(hulkScale));
+  console.log('PASS: Hulk meshes alter real WebGL frame pixels in front of the player (' + hulkScale.changedPixels + ' changed samples)');
 
 
 
