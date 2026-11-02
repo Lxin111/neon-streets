@@ -37,6 +37,8 @@ async function loadPbrTextureSets(onProgress=()=>{}) {
       const [diff, normal, rough, height, metal] = await Promise.all([
         loadMap(files.diff, true), loadMap(files.normal), loadMap(files.rough), loadMap(files.height), loadMap(files.metal)
       ]);
+      const repeatX=kind==='bark'?1.2:kind==='asphalt'?3.4:2.2,repeatY=kind==='bark'?2.8:2.2;
+      for(const texture of [diff,normal,rough,height,metal])if(texture)texture.repeat.set(repeatX,repeatY);
       return [kind, { diff, normal, rough, height, metal }];
     }));
     pbrTextureSets = Object.fromEntries(entries.filter(([, maps]) => maps.diff));
@@ -61,8 +63,7 @@ function detailedSurface(color,kind='concrete',seed=1,roughness=.82,metalness=0)
   const key=[color,kind,seed%3,roughness,metalness].join('|');if(materialCache.has(key))return materialCache.get(key);
   const pbr=pbrTextureSets[kind]||(kind==='brick'?pbrTextureSets.concrete:null);
   if(pbr?.diff){
-    const repeatX=kind==='bark'?1.2:kind==='asphalt'?3.4:2.2,repeatY=kind==='bark'?2.8:2.2;
-    const cloneMap=source=>{if(!source)return null;const map=source.clone();map.wrapS=map.wrapT=THREE.RepeatWrapping;map.repeat.set(repeatX,repeatY);map.anisotropy=8;return map;};
+    const cloneMap=source=>source||null;
     const material=new THREE.MeshStandardMaterial({color:new THREE.Color(color),map:cloneMap(pbr.diff),normalMap:cloneMap(pbr.normal),roughnessMap:cloneMap(pbr.rough),bumpMap:cloneMap(pbr.height),metalnessMap:cloneMap(pbr.metal),normalScale:new THREE.Vector2(.72,.72),bumpScale:kind==='asphalt'?.035:.022,roughness,metalness});
     materialCache.set(key,material);return material;
   }
@@ -288,7 +289,7 @@ export async function createWorld(onProgress = () => {}) {
   flushBoxBatches(city);
   const environment = new EnvironmentSystem(scene,camera,hemisphere,sun);
   return {
-    scene, camera, renderer, composer, city, buildingColliders, environment,
+    scene, camera, renderer, composer, city, buildingColliders, environment, pbrTextureKinds:Object.keys(pbrTextureSets),
     resize() {
       camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
       renderer.setSize(innerWidth,innerHeight);const quality=localStorage.getItem('ns_quality')||'high';renderer.setPixelRatio(quality==='performance'?.85:quality==='balanced'?Math.min(devicePixelRatio,1.25):Math.min(devicePixelRatio,matchMedia('(pointer: coarse)').matches?1.35:2));renderer.shadowMap.enabled=quality!=='performance';composer.setSize(innerWidth,innerHeight);
