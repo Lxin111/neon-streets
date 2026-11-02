@@ -7,6 +7,7 @@ let browser;
 const pageErrors = [];
 const consoleErrors = [];
 let page;
+let livePage;
 try {
   await mkdir('artifacts', { recursive: true });
   let ready = false;
