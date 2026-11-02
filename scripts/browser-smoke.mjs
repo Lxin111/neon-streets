@@ -178,8 +178,8 @@ try {
   const manifestResponse = await fetch(new URL('./textures/pbr-manifest.json', liveUrl), { headers: noCache, signal: AbortSignal.timeout(30000) });
   if (!manifestResponse.ok) throw new Error('Published PBR manifest returned HTTP ' + manifestResponse.status);
   const manifest = await manifestResponse.json();
-  const requiredPbrKinds = ['asphalt','concrete','brick','wood','bark','metal'];
-  if (requiredPbrKinds.some(kind => !manifest.materials?.[kind])) throw new Error('Published PBR manifest is missing material sets.');
+  const publishedPbrKinds = ['asphalt','concrete','brick','wood','bark','metal'];
+  if (publishedPbrKinds.some(kind => !manifest.materials?.[kind])) throw new Error('Published PBR manifest is missing material sets.');
   const assetUrls = [
     new URL(scriptPath, liveUrl),
     new URL(stylePath, liveUrl),
