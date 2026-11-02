@@ -149,8 +149,8 @@ try {
     world.renderer.render(game.scene, game.camera);
     const gl = world.renderer.getContext(), canvas = world.renderer.domElement, w = canvas.width, h = canvas.height;
     const read = () => { gl.finish(); const pixels = new Uint8Array(w*h*4); gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,pixels); return pixels; };
-    boss.model.root.visible = false; world.composer?.render?.() || world.renderer.render(game.scene,game.camera); const before = read();
-    boss.model.root.visible = true; world.composer?.render?.() || world.renderer.render(game.scene,game.camera); const after = read();
+    boss.model.root.visible = false; if(world.composer)world.composer.render();else world.renderer.render(game.scene,game.camera); const before = read();
+    boss.model.root.visible = true; if(world.composer)world.composer.render();else world.renderer.render(game.scene,game.camera); const after = read();
     boss.model.root.updateMatrixWorld(true);
     const rect = {x0:Math.floor(w*.2),x1:Math.ceil(w*.8),y0:Math.floor(h*.05),y1:Math.ceil(h*.95)};
     let changed=0;
